@@ -1,0 +1,65 @@
+; Engine configuration file.
+; It's best edited using the editor UI and not directly,
+; since the parameters that go here are not all obvious.
+;
+; Format:
+;   [section] ; section goes between []
+;   param=value ; assign values to parameters
+
+config_version=4
+
+_global_script_classes=[ {
+"base": "Resource",
+"class": "GameDataContainer",
+"language": "GDScript",
+"path": "res://src/class/class_game_data_container.gd"
+}, {
+"base": "Node",
+"class": "GameGlobal",
+"language": "GDScript",
+"path": "res://src/class/class_global.gd"
+} ]
+_global_script_class_icons={
+"GameDataContainer": "",
+"GameGlobal": ""
+}
+
+[application]
+
+config/name="# [ddat-gpf.0] Prototyping Framework Core"
+config/description="workspace to focus on developing modular frameworks for godot projects"
+run/main_scene="res://_dev/placeholder_main.tscn"
+config/use_custom_user_dir=true
+config/custom_user_dir_name="ddat_framework"
+config/icon="res://_dev/ddat_icon.png"
+
+[autoload]
+
+GlobalData="*res://src/autoload/global_data.gd"
+GlobalDebug="*res://src/autoload/global_debug.gd"
+GlobalDevTools="*res://src/autoload/global_devtools.tscn"
+
+[debug]
+
+settings/stdout/verbose_stdout=true
+
+[display]
+
+window/size/width=1920
+window/size/height=1080
+
+[editor]
+
+script_templates_search_path="res://_dev/default_scripts"
+
+[logging]
+
+file_logging/enable_file_logging=true
+
+[network]
+
+limits/debugger_stdout/max_chars_per_second=10000
+
+[rendering]
+
+environment/default_environment="res://_dev/default_env.tres"
