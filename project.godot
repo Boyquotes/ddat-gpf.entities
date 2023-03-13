@@ -12,12 +12,12 @@ _global_script_classes=[ {
 "base": "Resource",
 "class": "GameDataContainer",
 "language": "GDScript",
-"path": "res://src/classes/class_game_data_container.gd"
+"path": "res://src/ddat-gpf/classes/class_game_data_container.gd"
 }, {
 "base": "Node",
 "class": "GameGlobal",
 "language": "GDScript",
-"path": "res://src/classes/class_global.gd"
+"path": "res://src/ddat-gpf/classes/class_global.gd"
 } ]
 _global_script_class_icons={
 "GameDataContainer": "",
@@ -35,9 +35,9 @@ config/icon="res://_dev/ddat_icon.png"
 
 [autoload]
 
-GlobalData="*res://src/autoload/global_data.gd"
-GlobalDebug="*res://src/autoload/global_debug.gd"
-GlobalDevTools="*res://src/autoload/global_devtools.tscn"
+GlobalData="*res://src/ddat-gpf/autoload/global_data.gd"
+GlobalDebug="*res://src/ddat-gpf/autoload/global_debug.gd"
+GlobalDevTools="*res://src/ddat-gpf/autoload/global_devtools.tscn"
 
 [debug]
 
