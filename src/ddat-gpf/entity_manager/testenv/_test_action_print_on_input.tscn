@@ -1,0 +1,22 @@
+[gd_scene load_steps=4 format=2]
+
+[ext_resource path="res://src/ddat-gpf/entity_manager/classes/action_effects/action_print_to_console.gd" type="Script" id=2]
+[ext_resource path="res://src/ddat-gpf/entity_manager/classes/class_action_manager.gd" type="Script" id=3]
+[ext_resource path="res://src/ddat-gpf/entity_manager/classes/action_conditions/actcon_on_input.gd" type="Script" id=4]
+
+[node name="root" type="Node2D"]
+
+[node name="ActionManager" type="Node" parent="."]
+script = ExtResource( 3 )
+action_resolution_step_period = 25.0
+
+[node name="ActionEffectPrintToConsole" type="Node" parent="ActionManager"]
+script = ExtResource( 2 )
+print_string = "hello world"
+
+[node name="ActionConditionOnInput" type="Node" parent="ActionManager/ActionEffectPrintToConsole"]
+script = ExtResource( 4 )
+chosen_input_type = 1
+input_action_accepted = "ui_accept"
+
+[connection signal="condition_state_now_valid" from="ActionManager/ActionEffectPrintToConsole/ActionConditionOnInput" to="ActionManager/ActionEffectPrintToConsole" method="do"]

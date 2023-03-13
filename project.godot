@@ -9,6 +9,46 @@
 config_version=4
 
 _global_script_classes=[ {
+"base": "Node",
+"class": "Action",
+"language": "GDScript",
+"path": "res://src/ddat-gpf/entity_manager/classes/class_action.gd"
+}, {
+"base": "Action",
+"class": "ActionCondition",
+"language": "GDScript",
+"path": "res://src/ddat-gpf/entity_manager/classes/class_action_condition.gd"
+}, {
+"base": "ActionCondition",
+"class": "ActionConditionOnInput",
+"language": "GDScript",
+"path": "res://src/ddat-gpf/entity_manager/classes/action_conditions/actcon_on_input.gd"
+}, {
+"base": "ActionCondition",
+"class": "ActionConditionOnInterval",
+"language": "GDScript",
+"path": "res://src/ddat-gpf/entity_manager/classes/action_conditions/actcon_on_interval.gd"
+}, {
+"base": "Action",
+"class": "ActionEffect",
+"language": "GDScript",
+"path": "res://src/ddat-gpf/entity_manager/classes/class_action_effect.gd"
+}, {
+"base": "ActionEffect",
+"class": "ActionEffectPrintToConsole",
+"language": "GDScript",
+"path": "res://src/ddat-gpf/entity_manager/classes/action_effects/action_print_to_console.gd"
+}, {
+"base": "Action",
+"class": "ActionManager",
+"language": "GDScript",
+"path": "res://src/ddat-gpf/entity_manager/classes/class_action_manager.gd"
+}, {
+"base": "Node2D",
+"class": "Actor",
+"language": "GDScript",
+"path": "res://src/ddat-gpf/entity_manager/classes/class_actor.gd"
+}, {
 "base": "Resource",
 "class": "GameDataContainer",
 "language": "GDScript",
@@ -20,6 +60,14 @@ _global_script_classes=[ {
 "path": "res://src/ddat-gpf/classes/class_global.gd"
 } ]
 _global_script_class_icons={
+"Action": "",
+"ActionCondition": "",
+"ActionConditionOnInput": "",
+"ActionConditionOnInterval": "",
+"ActionEffect": "",
+"ActionEffectPrintToConsole": "",
+"ActionManager": "",
+"Actor": "",
 "GameDataContainer": "",
 "GameGlobal": ""
 }
