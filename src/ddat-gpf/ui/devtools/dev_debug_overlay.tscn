@@ -1,9 +1,10 @@
 [gd_scene load_steps=5 format=2]
 
-[ext_resource path="res://src/ui/devtools/dev_debug_overlay.gd" type="Script" id=1]
-[ext_resource path="res://src/ui/devtools/font_devtools_item_container_key.tres" type="DynamicFont" id=2]
-[ext_resource path="res://src/ui/devtools/style_line_devtools_item_container_divider.tres" type="StyleBox" id=3]
-[ext_resource path="res://src/ui/devtools/font_devtools_item_container_value.tres" type="DynamicFont" id=4]
+[ext_resource path="res://src/ddat-gpf/ui/devtools/dev_debug_overlay.gd" type="Script" id=1]
+[ext_resource path="res://src/ddat-gpf/ui/devtools/font_devtools_item_container_key.tres" type="DynamicFont" id=2]
+[ext_resource path="res://src/ddat-gpf/ui/devtools/style_line_devtools_item_container_divider.tres" type="StyleBox" id=3]
+[ext_resource path="res://src/ddat-gpf/ui/devtools/font_devtools_item_container_value.tres" type="DynamicFont" id=4]
+
 
 [node name="DevDebugOverlay" type="Control"]
 anchor_right = 1.0

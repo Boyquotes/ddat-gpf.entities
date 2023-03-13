@@ -9,24 +9,72 @@
 config_version=4
 
 _global_script_classes=[ {
+"base": "Node",
+"class": "Action",
+"language": "GDScript",
+"path": "res://src/ddat-gpf/entity_manager/classes/class_action.gd"
+}, {
+"base": "Action",
+"class": "ActionCondition",
+"language": "GDScript",
+"path": "res://src/ddat-gpf/entity_manager/classes/class_action_condition.gd"
+}, {
+"base": "ActionCondition",
+"class": "ActionConditionOnInput",
+"language": "GDScript",
+"path": "res://src/ddat-gpf/entity_manager/classes/action_conditions/actcon_on_input.gd"
+}, {
+"base": "ActionCondition",
+"class": "ActionConditionOnInterval",
+"language": "GDScript",
+"path": "res://src/ddat-gpf/entity_manager/classes/action_conditions/actcon_on_interval.gd"
+}, {
+"base": "Action",
+"class": "ActionEffect",
+"language": "GDScript",
+"path": "res://src/ddat-gpf/entity_manager/classes/class_action_effect.gd"
+}, {
+"base": "ActionEffect",
+"class": "ActionEffectPrintToConsole",
+"language": "GDScript",
+"path": "res://src/ddat-gpf/entity_manager/classes/action_effects/action_print_to_console.gd"
+}, {
+"base": "Action",
+"class": "ActionManager",
+"language": "GDScript",
+"path": "res://src/ddat-gpf/entity_manager/classes/class_action_manager.gd"
+}, {
+"base": "Node2D",
+"class": "Actor",
+"language": "GDScript",
+"path": "res://src/ddat-gpf/entity_manager/classes/class_actor.gd"
+}, {
 "base": "Resource",
 "class": "GameDataContainer",
 "language": "GDScript",
-"path": "res://src/class/class_game_data_container.gd"
+"path": "res://src/ddat-gpf/classes/class_game_data_container.gd"
 }, {
 "base": "Node",
 "class": "GameGlobal",
 "language": "GDScript",
-"path": "res://src/class/class_global.gd"
+"path": "res://src/ddat-gpf/classes/class_global.gd"
 } ]
 _global_script_class_icons={
+"Action": "",
+"ActionCondition": "",
+"ActionConditionOnInput": "",
+"ActionConditionOnInterval": "",
+"ActionEffect": "",
+"ActionEffectPrintToConsole": "",
+"ActionManager": "",
+"Actor": "",
 "GameDataContainer": "",
 "GameGlobal": ""
 }
 
 [application]
 
-config/name="# [ddat-gpf.0] Prototyping Framework Core"
+config/name="#[ddat-gpf.entities] Entity Library"
 config/description="workspace to focus on developing modular frameworks for godot projects"
 run/main_scene="res://_dev/placeholder_main.tscn"
 config/use_custom_user_dir=true
@@ -35,9 +83,9 @@ config/icon="res://_dev/ddat_icon.png"
 
 [autoload]
 
-GlobalData="*res://src/autoload/global_data.gd"
-GlobalDebug="*res://src/autoload/global_debug.gd"
-GlobalDevTools="*res://src/autoload/global_devtools.tscn"
+GlobalData="*res://src/ddat-gpf/autoload/global_data.gd"
+GlobalDebug="*res://src/ddat-gpf/autoload/global_debug.gd"
+GlobalDevTools="*res://src/ddat-gpf/autoload/global_devtools.tscn"
 
 [debug]
 

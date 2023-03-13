@@ -1,8 +1,6 @@
-extends Control
+extends GameGlobal
 
-#class_name DevActionMenu
-
-##############################################################################
+#class_name GlobalPool
 
 # This is a slightly modified version of the 3.0 (rev 5f5a9378)  style guide
 # Changes are documented below with <- indicators
@@ -15,20 +13,9 @@ extends Control
 ##############################################################################
 #
 #04a. dependencies <- new addition
-
-# DEPENDENCY: GlobalDebug
-
-# NOTES
-
-# [debug action menu feature list]
-# - disclaimer at top of menu informing devs to add buttons if none are present
-# - command line input for written dev commands
-# - keyboard/input typing solution as part of ddat_core
-# - dict to add a new method, key is button text and value is method name in file
-# - after dev updates dict they add a method to be called when button is pressed
-# - buttons without found methods aren't shown when panel is called
-# - globalDebug adds action under F2 (default0 for showing debug action panel (auto-behaviour, can be overriden)
-
+#
+#04b. # docstring
+#
 ##############################################################################
 #
 # Declare member variables here. Examples:
@@ -37,13 +24,13 @@ extends Control
 #
 #05. signals
 #06. enums
-
+#
 #07. constants
 # for passing to error logging
 const SCRIPT_NAME := "script_name"
 # for developer use, enable if making changes
 const VERBOSE_LOGGING := true
-
+#
 #08. exported variables
 #09. public variables
 #10. private variables
