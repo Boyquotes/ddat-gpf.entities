@@ -74,12 +74,13 @@ _global_script_class_icons={
 
 [application]
 
-config/name="#[ddat-gpf.entities] Entity Library"
-config/description="workspace to focus on developing modular frameworks for godot projects"
+config/name="#[ddat-gpf.entities] Entity Management Module"
+config/description="Project workspace to focus on developing the entity management module, a series of tools to help build game entities (part of the Godot prototyping framework)."
 run/main_scene="res://_dev/placeholder_main.tscn"
 config/use_custom_user_dir=true
 config/custom_user_dir_name="ddat_framework"
 config/icon="res://_dev/ddat_icon.png"
+run/description="workspace to focus on developing (part of the Godot prototyping framework)."
 
 [autoload]
 
