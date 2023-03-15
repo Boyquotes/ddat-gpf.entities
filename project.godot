@@ -12,67 +12,67 @@ _global_script_classes=[ {
 "base": "Node",
 "class": "Action",
 "language": "GDScript",
-"path": "res://src/ddat-gpf/entity_managers/node_actions/classes/class_action.gd"
+"path": "res://src/ddat-gpf/entity_actor_system/node_actions/classes/class_action.gd"
 }, {
 "base": "Action",
 "class": "ActionCondition",
 "language": "GDScript",
-"path": "res://src/ddat-gpf/entity_managers/node_actions/classes/class_action_condition.gd"
+"path": "res://src/ddat-gpf/entity_actor_system/node_actions/classes/class_action_condition.gd"
 }, {
 "base": "ActionCondition",
 "class": "ActionConditionOnInput",
 "language": "GDScript",
-"path": "res://src/ddat-gpf/entity_managers/node_actions/classes/action_conditions/actcon_on_input.gd"
+"path": "res://src/ddat-gpf/entity_actor_system/node_actions/classes/action_conditions/actcon_on_input.gd"
 }, {
 "base": "ActionCondition",
 "class": "ActionConditionOnInterval",
 "language": "GDScript",
-"path": "res://src/ddat-gpf/entity_managers/node_actions/classes/action_conditions/actcon_on_interval.gd"
+"path": "res://src/ddat-gpf/entity_actor_system/node_actions/classes/action_conditions/actcon_on_interval.gd"
 }, {
 "base": "Action",
 "class": "ActionEffect",
 "language": "GDScript",
-"path": "res://src/ddat-gpf/entity_managers/node_actions/classes/class_action_effect.gd"
+"path": "res://src/ddat-gpf/entity_actor_system/node_actions/classes/class_action_effect.gd"
 }, {
 "base": "ActionEffect",
 "class": "ActionEffectPrintToConsole",
 "language": "GDScript",
-"path": "res://src/ddat-gpf/entity_managers/node_actions/classes/action_effects/action_print_to_console.gd"
+"path": "res://src/ddat-gpf/entity_actor_system/node_actions/classes/action_effects/action_print_to_console.gd"
 }, {
 "base": "Action",
 "class": "ActionManager",
 "language": "GDScript",
-"path": "res://src/ddat-gpf/entity_managers/node_actions/classes/class_action_manager.gd"
+"path": "res://src/ddat-gpf/entity_actor_system/node_actions/classes/class_action_manager.gd"
 }, {
 "base": "Node2D",
 "class": "Actor",
 "language": "GDScript",
-"path": "res://src/ddat-gpf/entity_managers/classes/class_actor.gd"
+"path": "res://src/ddat-gpf/entity_actor_system/classes/class_actor.gd"
 }, {
 "base": "EntityAffector",
 "class": "AreaOfEffect",
 "language": "GDScript",
-"path": "res://src/ddat-gpf/entity_managers/entity_affectors/class_aoe.gd"
+"path": "res://src/ddat-gpf/entity_actor_system/entity_affectors/class_aoe.gd"
 }, {
 "base": "Area2D",
 "class": "Entity",
 "language": "GDScript",
-"path": "res://src/ddat-gpf/entity_managers/classes/class_entity.gd"
+"path": "res://src/ddat-gpf/entity_actor_system/classes/class_entity.gd"
 }, {
 "base": "Area2D",
 "class": "EntityAffector",
 "language": "GDScript",
-"path": "res://src/ddat-gpf/entity_managers/entity_affectors/class_entity_affector.gd"
+"path": "res://src/ddat-gpf/entity_actor_system/entity_affectors/class_entity_affector.gd"
 }, {
 "base": "Node",
 "class": "EntityController",
 "language": "GDScript",
-"path": "res://src/ddat-gpf/entity_managers/controllers/classes/entity_controller.gd"
+"path": "res://src/ddat-gpf/entity_actor_system/controllers/classes/entity_controller.gd"
 }, {
 "base": "Node2D",
 "class": "EntitySpawner",
 "language": "GDScript",
-"path": "res://src/ddat-gpf/entity_managers/entity_affectors/class_entity_spawner.gd"
+"path": "res://src/ddat-gpf/entity_actor_system/entity_affectors/class_entity_spawner.gd"
 }, {
 "base": "Resource",
 "class": "GameDataContainer",
@@ -87,7 +87,7 @@ _global_script_classes=[ {
 "base": "EntityAffector",
 "class": "Projectile",
 "language": "GDScript",
-"path": "res://src/ddat-gpf/entity_managers/entity_affectors/class_projectile.gd"
+"path": "res://src/ddat-gpf/entity_actor_system/entity_affectors/class_projectile.gd"
 } ]
 _global_script_class_icons={
 "Action": "",
@@ -110,8 +110,8 @@ _global_script_class_icons={
 
 [application]
 
-config/name="#[ddat-gpf.entities] Entity Management Module"
-config/description="Project workspace to focus on developing the entity management module, a series of tools to help build game entities (part of the Godot prototyping framework)."
+config/name="#[ddat-gpf.entities] Actor Entity System"
+config/description="Project workspace to focus on developing the actor and entity management modules, a series of optional systems to help build game objects (part of the Godot prototyping framework)."
 run/main_scene="res://_dev/placeholder_main.tscn"
 config/use_custom_user_dir=true
 config/custom_user_dir_name="ddat_framework"

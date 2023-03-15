@@ -9,7 +9,6 @@ class_name Actor
 #	Components - tags that define how an actor behaves in response to stimuli
 #	Stats - numerical properties that can be temporarily modified
 #	Actions - methods that are called in response to predefined conditions
-#	Entities - normal Godot scenes that are signal-linked to the actor
 
 #//TODO
 #	Add records to stat changes of all operations?

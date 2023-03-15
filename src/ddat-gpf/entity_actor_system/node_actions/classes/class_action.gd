@@ -107,9 +107,8 @@ export(int) var priority := 0
 #
 # [ActorAction System Tree]
 # ActionManager, ActionEffect and ActionCondition make up the ActorAction system.
-# An Actor is a node with a regular Godot tree of nodes beneath it (hereafter
-# referred to as the actor's 'entity'). The Actor has nodes of the ActorAction
-# system classes as nested children, based on their priority.
+# An Actor is a node with a regular Godot tree of nodes beneath it, as well as
+# nodes of the ActorAction system classes as nested children.
 #
 # An example tree might look like this:
 #	Actor
@@ -135,8 +134,7 @@ export(int) var priority := 0
 #			-> ActionEffect5
 #				-> ActionCondition1
 #				-> ActionCondition3
-#	-> Entity
-#		-> (rest of scene tree)
+#	-> (rest of scene tree)
 #
 # As the above tree suggests, conditions are not exclusive to an effect,
 # effects are not exclusive to a group, and effects do not need to be unique
