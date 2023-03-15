@@ -49,6 +49,26 @@ _global_script_classes=[ {
 "language": "GDScript",
 "path": "res://src/ddat-gpf/entity_managers/classes/class_actor.gd"
 }, {
+"base": "EntityAffector",
+"class": "AreaOfEffect",
+"language": "GDScript",
+"path": "res://src/ddat-gpf/entity_managers/entity_affectors/class_aoe.gd"
+}, {
+"base": "Area2D",
+"class": "Entity",
+"language": "GDScript",
+"path": "res://src/ddat-gpf/entity_managers/classes/class_entity.gd"
+}, {
+"base": "Area2D",
+"class": "EntityAffector",
+"language": "GDScript",
+"path": "res://src/ddat-gpf/entity_managers/entity_affectors/class_entity_affector.gd"
+}, {
+"base": "Node2D",
+"class": "EntitySpawner",
+"language": "GDScript",
+"path": "res://src/ddat-gpf/entity_managers/entity_affectors/class_entity_spawner.gd"
+}, {
 "base": "Resource",
 "class": "GameDataContainer",
 "language": "GDScript",
@@ -58,6 +78,11 @@ _global_script_classes=[ {
 "class": "GameGlobal",
 "language": "GDScript",
 "path": "res://src/ddat-gpf/classes/class_global.gd"
+}, {
+"base": "EntityAffector",
+"class": "Projectile",
+"language": "GDScript",
+"path": "res://src/ddat-gpf/entity_managers/entity_affectors/class_projectile.gd"
 } ]
 _global_script_class_icons={
 "Action": "",
@@ -68,8 +93,13 @@ _global_script_class_icons={
 "ActionEffectPrintToConsole": "",
 "ActionManager": "",
 "Actor": "",
+"AreaOfEffect": "",
+"Entity": "",
+"EntityAffector": "",
+"EntitySpawner": "",
 "GameDataContainer": "",
-"GameGlobal": ""
+"GameGlobal": "",
+"Projectile": ""
 }
 
 [application]
