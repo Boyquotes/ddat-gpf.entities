@@ -64,6 +64,11 @@ _global_script_classes=[ {
 "language": "GDScript",
 "path": "res://src/ddat-gpf/entity_managers/entity_affectors/class_entity_affector.gd"
 }, {
+"base": "Node",
+"class": "EntityController",
+"language": "GDScript",
+"path": "res://src/ddat-gpf/entity_managers/controllers/classes/entity_controller.gd"
+}, {
 "base": "Node2D",
 "class": "EntitySpawner",
 "language": "GDScript",
@@ -96,6 +101,7 @@ _global_script_class_icons={
 "AreaOfEffect": "",
 "Entity": "",
 "EntityAffector": "",
+"EntityController": "",
 "EntitySpawner": "",
 "GameDataContainer": "",
 "GameGlobal": "",
