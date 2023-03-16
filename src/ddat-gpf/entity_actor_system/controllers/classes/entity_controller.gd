@@ -9,9 +9,25 @@ class_name EntityController
 # the parent entity, tracks when the parent entity is active, and performs
 # behaviour only when the parent entity is active
 
+# EntityControllers allow you to separate logic for different node behaviours
+# into separate nodes, e.g. putting all jumping logic under one node, or
+# all rotating logic under another. In doing so you can add comprehensive
+# logic for each circumstance with toggleable options, so a jumpController
+# might be the same script/node but with different exports set for different
+# nodes.
+# The design goals for the entityController were as follows:
+# - Enable code re-use
+# - Prevent repeating similar functions across nodes
+# - Allow for modular node building
+# - Decouple behaviours from central actors/entities
+# - Improve behaviour readability
+
 # Extend the EntityController class and use the included 'update' method
 # when you wish to change the target property in the entity.
+# See the included test_entity_controller scene within the actor entity
+# system repository for an example of this.
 
+#####
 #//TODO
 #	add support for node path to a non-parent entity?
 
@@ -71,6 +87,12 @@ func update(arg_property_name, arg_property_value):
 	# if setup isn't valid, the target or signal isn't valid
 	if (is_setup == false):
 		return
+	# pass to the correct method
+	if chosen_parent_type == PARENT_TYPE.ENTITY_AREA\
+	or chosen_parent_type == PARENT_TYPE.ENTITY_BODY:
+		_update_entity(arg_property_name, arg_property_value)
+	elif chosen_parent_type == PARENT_TYPE.ANY:
+		_update_any(arg_property_name, arg_property_value)
 
 
 ##############################################################################
