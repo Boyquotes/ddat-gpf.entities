@@ -46,7 +46,7 @@ enum PARENT_TYPE {ENTITY_AREA, ENTITY_BODY, ANY}
 # for passing to error logging
 const CLASS_NAME := "EntityController"
 ## for developer use, enable if making changes
-#const CLASS_VERBOSE_LOGGING := false
+const CLASS_VERBOSE_LOGGING := true
 
 export(PARENT_TYPE) var chosen_parent_type := PARENT_TYPE.ENTITY_AREA
 
@@ -57,12 +57,20 @@ export(NodePath) var path_to_target: NodePath = ""
 var target_node # setget _set_parent_node
 
 # whether the entity controller established required refs and connects
-var is_setup := false
+var is_setup := false # setget _set_is_setup
 
 ##############################################################################
 
 # setters and getters
 
+
+#func _set_is_setup(arg_value):
+#	is_setup = arg_value
+	# if verbose logging give details
+#	if is_setup:
+#		GlobalDebug.log_success(CLASS_VERBOSE_LOGGING, CLASS_NAME,
+#				"_set_is_setup",
+#				"parent set!")
 
 #func _set_parent_entity_node(arg_value):
 #	parent_entity_node = arg_value
@@ -77,6 +85,9 @@ var is_setup := false
 func _ready():
 	# run setup steps in order
 	if _setup_enter_and_exit_behaviour():
+		# log progress
+		GlobalDebug.log_success(CLASS_VERBOSE_LOGGING, CLASS_NAME,
+				"_ready", "set enter/exit on "+str(self))
 		_on_enter_tree()
 
 
@@ -112,6 +123,13 @@ func _update_entity(arg_property_name, arg_property_value):
 	if target_node.is_enabled():
 		emit_signal("change_entity_property",
 				str(arg_property_name), arg_property_value)
+	else:
+		if CLASS_VERBOSE_LOGGING:
+			GlobalDebug.log_error(CLASS_NAME, "_update_entity",
+					"target_node [{t}] for {s} not enabled".format(
+						{"t": str(target_node),
+						"s": str(self)}
+					))
 
 
 # alternate update method
@@ -129,16 +147,22 @@ func _update_any(arg_property_name, arg_property_value):
 
 func _on_enter_tree():
 	if _setup_parent_ref():
+		GlobalDebug.log_success(CLASS_VERBOSE_LOGGING, CLASS_NAME,
+				"_on_enter_tree",
+				"new parent is {p}".format({"p": target_node}))
+		
 		if _manage_setup_signal(true):
-			is_setup = true
+			# no logging; PARENT_TYPE.ANY returns true, gives false positive
+			self.is_setup = true
 
 
 func _on_exit_tree():
-	_manage_setup_signal(false)
+	if _manage_setup_signal(false) != true:
+		GlobalDebug.log_error(CLASS_NAME, "_on_exit_tree", "didn't del signal")
 	# clear target and path to target if they were previously set
 	target_node = null
 	path_to_target = ""
-	is_setup = false
+	self.is_setup = false
 
 
 # check the entityController is child of an entity
@@ -166,6 +190,8 @@ func _setup_parent_ref() -> bool:
 			outcome = true
 	if outcome:
 		target_node = parent_node
+	if (outcome == false):
+		GlobalDebug.log_error(CLASS_NAME, "_setup_parent_ref", "did not set")
 	# whether was set
 	return outcome
 
