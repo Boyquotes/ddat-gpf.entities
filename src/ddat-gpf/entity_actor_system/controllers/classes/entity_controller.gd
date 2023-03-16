@@ -29,7 +29,7 @@ class_name EntityController
 
 #####
 #//TODO
-#	add support for node path to a non-parent entity?
+#	not tracking any other todo items currently
 
 ##############################################################################
 
@@ -50,8 +50,11 @@ const CLASS_NAME := "EntityController"
 
 export(PARENT_TYPE) var chosen_parent_type := PARENT_TYPE.ENTITY_AREA
 
+# if left unset the parent will be assumed to be the entity controller target
+export(NodePath) var path_to_target: NodePath = ""
+
 # reference to the parent which is only set if validated
-var valid_parent_node # setget _set_parent_node
+var target_node # setget _set_parent_node
 
 # whether the entity controller established required refs and connects
 var is_setup := false
@@ -104,9 +107,9 @@ func update(arg_property_name, arg_property_value):
 # called from public update() method
 func _update_entity(arg_property_name, arg_property_value):
 	# if validated (is before this method), this should always be true
-#	if not valid_parent_node.has_method("is_enabled"):
+#	if not target_node.has_method("is_enabled"):
 #		return
-	if valid_parent_node.is_enabled():
+	if target_node.is_enabled():
 		emit_signal("change_entity_property",
 				str(arg_property_name), arg_property_value)
 
@@ -118,10 +121,10 @@ func _update_entity(arg_property_name, arg_property_value):
 # the controller, consider extending the class to support update_entity()
 func _update_any(arg_property_name, arg_property_value):
 	# following code duplicated from entityArea/entityBody class
-	if str(arg_property_name) in valid_parent_node:
+	if str(arg_property_name) in target_node:
 		# Assigns a new value to the given property; if it does not exist
 		# or the given value's type doesn't match, nothing will happen.
-		valid_parent_node.set(arg_property_name, arg_property_value)
+		target_node.set(arg_property_name, arg_property_value)
 
 
 func _on_enter_tree():
@@ -132,13 +135,27 @@ func _on_enter_tree():
 
 func _on_exit_tree():
 	_manage_setup_signal(false)
-	valid_parent_node = null
+	# clear target and path to target if they were previously set
+	target_node = null
+	path_to_target = ""
 	is_setup = false
 
 
 # check the entityController is child of an entity
 func _setup_parent_ref() -> bool:
-	var parent_node = get_parent()
+	# find parent
+	# check has a parent
+	if (is_inside_tree() == false):
+		return false
+	var parent_node
+	# priority 1 - path to target node set in editor
+	if path_to_target != null:
+		parent_node = get_node_or_null(path_to_target)
+	# priority 2 - scene tree parent
+	if parent_node == null:
+		parent_node = get_parent()
+	
+	# validate parent
 	var outcome = false
 	match chosen_parent_type:
 		PARENT_TYPE.ENTITY_AREA:
@@ -148,7 +165,7 @@ func _setup_parent_ref() -> bool:
 		PARENT_TYPE.ANY:
 			outcome = true
 	if outcome:
-		valid_parent_node = parent_node
+		target_node = parent_node
 	# whether was set
 	return outcome
 
@@ -174,18 +191,18 @@ func _manage_setup_signal(connect_new: bool = true) -> bool:
 	var outcome
 	var target_method_string = "_on_change_property"
 	# ERR check; parent should have the method
-	if not valid_parent_node.has_method(target_method_string):
+	if not target_node.has_method(target_method_string):
 		return false
 	if connect_new:
 		outcome = connect("change_entity_property",
-				valid_parent_node, target_method_string)
+				target_node, target_method_string)
 	else:
 		outcome = is_connected("change_entity_property",
-				valid_parent_node, target_method_string)
+				target_node, target_method_string)
 		if (outcome == OK):
 			# no longer
 			disconnect("change_entity_property",
-					valid_parent_node, target_method_string)
+					target_node, target_method_string)
 	
 	# if OK, return true, else false
 	return (outcome == OK)
