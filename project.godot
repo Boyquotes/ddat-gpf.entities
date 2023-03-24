@@ -89,6 +89,16 @@ _global_script_classes=[ {
 "language": "GDScript",
 "path": "res://src/ddat-gpf/classes/class_global.gd"
 }, {
+"base": "Actor",
+"class": "PlayerActor",
+"language": "GDScript",
+"path": "res://src/ddat-gpf/entity_actor_system/player_controllers/player_actor.gd"
+}, {
+"base": "EntityBody",
+"class": "PlayerMovementController",
+"language": "GDScript",
+"path": "res://src/ddat-gpf/entity_actor_system/player_controllers/player_entity.gd"
+}, {
 "base": "EntityAffector",
 "class": "Projectile",
 "language": "GDScript",
@@ -111,6 +121,8 @@ _global_script_class_icons={
 "EntitySpawner": "",
 "GameDataContainer": "",
 "GameGlobal": "",
+"PlayerActor": "",
+"PlayerMovementController": "",
 "Projectile": ""
 }
 
