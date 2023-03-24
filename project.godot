@@ -72,7 +72,7 @@ _global_script_classes=[ {
 "base": "Node",
 "class": "EntityController",
 "language": "GDScript",
-"path": "res://src/ddat-gpf/entity_actor_system/controllers/classes/entity_controller.gd"
+"path": "res://_dev/deprecated/controllers/classes/entity_controller.gd"
 }, {
 "base": "Node2D",
 "class": "EntitySpawner",
