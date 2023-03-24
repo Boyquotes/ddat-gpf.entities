@@ -1,8 +1,8 @@
 [gd_scene load_steps=4 format=2]
 
-[ext_resource path="res://src/ddat-gpf/entity_actor_system/node_actions/classes/action_conditions/actcon_on_interval.gd" type="Script" id=1]
-[ext_resource path="res://src/ddat-gpf/entity_actor_system/node_actions/classes/action_effects/action_print_to_console.gd" type="Script" id=2]
-[ext_resource path="res://src/ddat-gpf/entity_actor_system/node_actions/classes/class_action_manager.gd" type="Script" id=3]
+[ext_resource path="res://_dev/deprecated/node_actions/classes/action_conditions/actcon_on_interval.gd" type="Script" id=1]
+[ext_resource path="res://_dev/deprecated/node_actions/classes/action_effects/action_print_to_console.gd" type="Script" id=2]
+[ext_resource path="res://_dev/deprecated/node_actions/classes/class_action_manager.gd" type="Script" id=3]
 
 
 [node name="root" type="Node2D"]
