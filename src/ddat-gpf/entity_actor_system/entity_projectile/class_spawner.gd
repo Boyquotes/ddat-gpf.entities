@@ -4,88 +4,122 @@ class_name EntitySpawner
 
 ##############################################################################
 
-# [Original Notes]
-# EntitySpawners create pre-configured entities. To set up an entity spawner
-# create a new scene with an entity spawner as part of the node tree, and place
-# an entity node in the same node tree (ideally as a child of the spawner).
-# Set the desired entity export args (i.e. sprite/collision), make sure to set
-# the '.is_root' export property of the entity, and set the path export of the
-# spawner to the location of the entity in the node tree.
-# The entity spawner will not create entities unless a signal is connected
-# to its .spawn() method, or an automated spawning behaviour (such as the
-# .spawn_timeout property) is enabled.
+# EntitySpawners create EntityArea nodes on demand, and act as an object
+# pooling systems which track previous spawns and hide now-unused entities as
+# well as re-using them.
+
+# [To Use]
+# Either
+# 1) instance an entityArea beneath the entitySpawner and assign it in-editor
+# to the NodePath export 'entity_path'
+#		on '_new_spawn()' calls, entities will be duplicated from this node
+# or
+# 2) assign a prebuilt entity area scene to the 'entity_area_scene' export
+#		on '_new_spawn()' calls, entities will be instanced from this preload
+#
+# If both above setups are valid, the first (duplicate) will be preferred
+#
+# Afterwards call the 'spawn()' method to ask the entitySpawner to create one
+# of the
+
+#//TODO
+# test both usage methods above
 
 
 ##############################################################################
 
-export(NodePath) var entity_path: NodePath
+export(PackedScene) var entity_area_scene
 
-# if this value is set a repeating autostart timer will be created
-# changing this value will reset the timer
-# set this value to nil (0.0) to disable the timer
-export(float) var spawn_timeout: float = 0.0 setget _set_spawn_timeout
+export(NodePath) var entity_path: NodePath
 
 # by default the entity spawner is allowed to create ('spawn') its entity
 # by setting this value to false the entity spawner will acknowledge requests
 # to create entities (run timer loops, recieve signals, etc) but will not
 # actually create new entities when asked.
-var spawn_allowed: bool = true
+export(bool) var is_enabled: bool = true
 
-# spawn timer node is only created if the spawn_timeout value is set
-var spawn_timer_node: Timer = null
+var active_entities = []
+
+var inactive_entities = []
 
 # node reference to the entity to create
+# is set to null if the path is invalid
 onready var spawner_entity :=\
-		get_node(entity_path) setget _set_spawner_entity
-
-##############################################################################
-
-
-# this setter confirms typing of the set entity to spawn
-func _set_spawner_entity(arg_entity: EntityArea):
-	spawner_entity = arg_entity
-
-
-# this setter handles creating a timer node if none exists on setting
-# a non-nil value to spawn_timoeout
-func _set_spawn_timeout(arg_timeout: float):
-	spawn_timeout = arg_timeout
-	# configure spawn timer
-	if spawn_timer_node != null:
-		if spawn_timer_node is Timer:
-			# reset timer
-			if not spawn_timer_node.is_stopped():
-				spawn_timer_node.stop()
-			# disable on nil value
-			if spawn_timeout > 0.0:
-				spawn_timer_node.wait_time = spawn_timeout
-				spawn_timer_node.start()
-	# spawn timer not found, add it
-	else:
-		_create_spawn_timer()
+		get_node_or_null(entity_path)
 
 
 ##############################################################################
 
 # virtual methods
 
+
+
+
 ##############################################################################
 
 # public methods
 
 
+# object pooling system which will reference inactive/active registers of
+# entities and either create a new entity, or reuse an old disabled entity.
 func spawn():
-	print("test, spawn")
-	var new_entity = spawner_entity.duplicate()
-	if new_entity == null:
-		#//TODO replace w/globalDebug call (as with all printerr placeholders)
-		printerr("spawn() unable to duplicate spawner entity")
-	assert(new_entity is EntityArea)
-	#//TODO _is_root shouldn't be private
-#	new_entity.is_root = false
-#	new_entity.is_active = true
-#	new_entity.is_valid = true
-	# set initial position to spawner (place spawner as muzzle)
+	var new_entity
+	if inactive_entities.empty():
+		new_entity = _new_spawn()
+
+
+# whether an entity is made inactive or active
+func _entity_state_update(arg_entity_node: EntityArea, arg_is_enabled: bool):
+	# update active entity array 
+	if (arg_is_enabled == true) and (not arg_entity_node in active_entities):
+		active_entities.append(arg_entity_node)
+	elif (arg_is_enabled == false) and (arg_entity_node in active_entities):
+		active_entities.erase(arg_entity_node)
+	# update inactive entity array
+	if (arg_is_enabled == false) and (not arg_entity_node in inactive_entities):
+		inactive_entities.append(arg_entity_node)
+	elif (arg_is_enabled == true) and (arg_entity_node in inactive_entities):
+		inactive_entities.erase(arg_entity_node)
+
+
+# prioritise duplication spawning method
+# returns null if unable to spawn an entity
+func _new_spawn():
+	var new_entity = null
+	if spawner_entity is EntityArea:
+		new_entity = _new_spawn_by_duplicate()
+	elif entity_area_scene != null:
+		new_entity = _new_spawn_by_instance()
+	# if valid, update the registers
+	if new_entity is EntityArea:
+		_entity_state_update(new_entity, true)
+	# make sure on return to check if new_entity is valid, this can return null
+	return new_entity
+
+
+# before calling should check the spawner_entity property is an EntityArea
+# returns null if invalid
+func _new_spawn_by_duplicate():
+	var new_entity
+	new_entity = spawner_entity.duplicate()
+	# can return null
+	return new_entity
+
+
+# before calling should check the entity_area_scene property is valid
+# returns null if invalid
+func _new_spawn_by_instance():
+	if entity_area_scene == null:
+		return null
+	var new_entity
+	if entity_area_scene is PackedScene:
+		new_entity = entity_area_scene.instance()
+	# can return null
+	return new_entity
+	
+
+func _old_new_spawn_method():
+	var new_entity: Node2D = Node2D.new()
 	new_entity.global_position = self.global_position
 	#//replace with globalPool in future implementation
 	var entity_root = get_tree().root
@@ -98,27 +132,6 @@ func spawn():
 
 # private methods
 
-
-# if spawn timer doesn't already exist but spawn_timeout property is set,
-# create a repeating autostart timer to handle spawn timeouts
-func _create_spawn_timer():
-	if spawn_timer_node != null:
-		#//TODO replace w/globalDebug call (as with all printerr placeholders)
-		printerr("call to _create_spawn_timer but spawn timer already exists")
-		return
-	spawn_timer_node = Timer.new()
-	if spawn_timer_node.connect("timeout", self, "spawn") != OK:
-		#//TODO replace w/globalDebug call (as with all printerr placeholders)
-		printerr("spawn timer failed to connect to entity spawner")
-		# discard timer (ref count should be nil for garbage collector)
-		spawn_timer_node = null
-	else:
-		spawn_timer_node.autostart = true
-		spawn_timer_node.one_shot = false
-		spawn_timer_node.wait_time = spawn_timeout
-		self.call_deferred("add_child", spawn_timer_node)
-#	yield(spawn_timer_node, "tree_entered")
-#	spawn_timer_node.start()
 
 
 ##############################################################################
