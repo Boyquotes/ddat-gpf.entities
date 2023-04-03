@@ -1,0 +1,53 @@
+[gd_scene load_steps=6 format=2]
+
+[ext_resource path="res://src/ddat-gpf/entity_actor_system/entity_ability/class_ability_controller.gd" type="Script" id=1]
+[ext_resource path="res://_dev/tests/test_entity_ability/entab_target/test_entab_target.gd" type="Script" id=2]
+[ext_resource path="res://_dev/ddat_icon.png" type="Texture" id=3]
+[ext_resource path="res://src/ddat-gpf/entity_actor_system/entity_ability/class_ability_targeter.gd" type="Script" id=4]
+[ext_resource path="res://_dev/icon.png" type="Texture" id=5]
+
+[node name="EntityAbilityTargetTest" type="Node2D"]
+script = ExtResource( 2 )
+
+[node name="SampleTargetSprite" type="Sprite" parent="."]
+visible = false
+position = Vector2( 334, 831 )
+texture = ExtResource( 3 )
+
+[node name="CenterOfScreen" type="Position2D" parent="."]
+position = Vector2( 960, 540 )
+
+[node name="EntityAbilityController" type="Node2D" parent="CenterOfScreen"]
+position = Vector2( -960, -540 )
+script = ExtResource( 1 )
+activation_mode = 3
+use_ability_action = "ui_accept"
+target_clear_action = "ui_cancel"
+min_hold_duration = 2.0
+reticule_mode = 2
+path_to_reticule_sprite = NodePath("../../SampleTargetSprite")
+
+[node name="EntityAbilityTargeter" type="Area2D" parent="CenterOfScreen/EntityAbilityController"]
+script = ExtResource( 4 )
+selection_mode = 2
+update_frequency = 0.01
+
+[node name="RotTargetLine" type="Line2D" parent="CenterOfScreen"]
+points = PoolVector2Array( 0, 0, 215, 0 )
+
+[node name="DebugLabel" type="Label" parent="."]
+margin_left = 186.0
+margin_top = 155.0
+margin_right = 226.0
+margin_bottom = 169.0
+rect_scale = Vector2( 2, 2 )
+
+[node name="EnemyTest1" type="Sprite" parent="."]
+texture = ExtResource( 5 )
+
+[node name="EnemyTest2" type="Sprite" parent="."]
+texture = ExtResource( 5 )
+
+[node name="Tween" type="Tween" parent="."]
+
+[connection signal="update_target" from="CenterOfScreen/EntityAbilityController/EntityAbilityTargeter" to="." method="_on_EntityAbilityTargeter_update_target"]
