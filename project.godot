@@ -74,10 +74,10 @@ _global_script_classes=[ {
 "language": "GDScript",
 "path": "res://_dev/deprecated/controllers/classes/entity_controller.gd"
 }, {
-"base": "Node2D",
+"base": "Position2D",
 "class": "EntitySpawner",
 "language": "GDScript",
-"path": "res://_dev/deprecated/entity_affectors/class_entity_spawner.gd"
+"path": "res://src/ddat-gpf/entity_actor_system/entity_projectile/class_spawner.gd"
 }, {
 "base": "Resource",
 "class": "GameDataContainer",
