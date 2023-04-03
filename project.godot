@@ -54,6 +54,16 @@ _global_script_classes=[ {
 "language": "GDScript",
 "path": "res://src/ddat-gpf/entity_actor_system/entity_projectile/class_aoe.gd"
 }, {
+"base": "Node2D",
+"class": "EntityAbilityController",
+"language": "GDScript",
+"path": "res://src/ddat-gpf/entity_actor_system/entity_ability/class_ability_controller.gd"
+}, {
+"base": "Area2D",
+"class": "EntityAbilityTargeter",
+"language": "GDScript",
+"path": "res://src/ddat-gpf/entity_actor_system/entity_ability/class_ability_targeter.gd"
+}, {
 "base": "Area2D",
 "class": "EntityAffector",
 "language": "GDScript",
@@ -103,6 +113,11 @@ _global_script_classes=[ {
 "class": "Projectile",
 "language": "GDScript",
 "path": "res://src/ddat-gpf/entity_actor_system/entity_projectile/class_projectile.gd"
+}, {
+"base": "EntityAbilityController",
+"class": "WeaponController",
+"language": "GDScript",
+"path": "res://src/ddat-gpf/entity_actor_system/entity_ability/class_weapon_controller.gd"
 } ]
 _global_script_class_icons={
 "Action": "",
@@ -114,6 +129,8 @@ _global_script_class_icons={
 "ActionManager": "",
 "Actor": "",
 "AreaOfEffect": "",
+"EntityAbilityController": "",
+"EntityAbilityTargeter": "",
 "EntityAffector": "",
 "EntityArea": "",
 "EntityBody": "",
@@ -123,7 +140,8 @@ _global_script_class_icons={
 "GameGlobal": "",
 "PlayerActor": "",
 "PlayerMovementController": "",
-"Projectile": ""
+"Projectile": "",
+"WeaponController": ""
 }
 
 [application]
