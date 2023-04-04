@@ -132,29 +132,19 @@ func _assign_entity_parent(
 
 
 # gateway for _entity_state_update, called if entity emits 'is_enabled' signal
-func _entity_enabled(arg_entity_node: EntityArea):
-	#//TODO, validation and replace entity_state_update behaviour
-	_entity_state_update(arg_entity_node, true)
+func _on_entity_enabled(arg_entity_node: EntityArea):
+	if (arg_entity_node in inactive_entities):
+		inactive_entities.erase(arg_entity_node)
+	if not (arg_entity_node in active_entities):
+		active_entities.append(arg_entity_node)
 
 
 # gateway for _entity_state_update, called if entity emits 'is_disabled' signal
-func _entity_disabled(arg_entity_node: EntityArea):
-	#//TODO, validation and replace entity_state_update behaviour
-	_entity_state_update(arg_entity_node, false)
-
-
-# whether an entity is made inactive or active
-func _entity_state_update(arg_entity_node: EntityArea, arg_is_enabled: bool):
-	# update active entity array 
-	if (arg_is_enabled == true) and (not arg_entity_node in active_entities):
-		active_entities.append(arg_entity_node)
-	elif (arg_is_enabled == false) and (arg_entity_node in active_entities):
+func _on_entity_disabled(arg_entity_node: EntityArea):
+	if (arg_entity_node in active_entities):
 		active_entities.erase(arg_entity_node)
-	# update inactive entity array
-	if (arg_is_enabled == false) and (not arg_entity_node in inactive_entities):
+	if not (arg_entity_node in inactive_entities):
 		inactive_entities.append(arg_entity_node)
-	elif (arg_is_enabled == true) and (arg_entity_node in inactive_entities):
-		inactive_entities.erase(arg_entity_node)
 
 
 # prioritise duplication spawning method
@@ -174,10 +164,10 @@ func _new_spawn():
 	#
 	# if valid, update the registers
 	if new_entity is EntityArea:
-		_entity_state_update(new_entity, true)
+		_on_entity_enabled(new_entity)
 		# when the entity changes active state it should update the spawner's
 		# 'active_entities' and 'inactive_entities' registers
-		new_entity.connect("is_disabled", self,
+		new_entity.connect("_on_entity_disabled", self,
 				"_entity_disabled", [new_entity])
 	# make sure on return to check if new_entity is valid, this can return null
 	return new_entity
