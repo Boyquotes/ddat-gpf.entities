@@ -157,6 +157,20 @@ func _assign_entity_parent(
 			get_tree().root.call_deferred("add_child", passed_entity)
 
 
+# from the spawner's 'force_properties' dict assigns properties (by dict key)
+# in the entity
+# assigns properties in the passed entity (getting them by the keys within
+# the spawners 'force_properties' dict) to the values within the 'force_properties' dict
+func _force_entity_properties(
+		passed_entity: EntityArea
+		):
+	for property_name in force_properties.keys():
+		if (typeof(property_name) == TYPE_STRING):
+			# Assigns a value to the given property. If the property doesn't
+			# exist or the given value's type doesn't match, nothing will happen.
+			passed_entity.set(property_name, force_properties[property_name])
+
+
 # prioritise duplication spawning method
 # returns null if unable to spawn an entity
 func _new_spawn():
