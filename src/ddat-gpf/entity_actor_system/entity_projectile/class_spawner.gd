@@ -38,25 +38,29 @@ signal entity_spawning(new_entity)
 # when spawned (after in tree)
 signal entity_spawned(new_entity)
 
+# options for spawn_method export
+# for dev testing spawn methods, in practice probably best to leave to default
 enum NEW_SPAWN_METHOD {EITHER, DUPLICATE, INSTANCE}
-
 # options for where to  place the newly spawned entity within the scene tree
-# end goal
-#enum SPAWN_PARENT {GLOBAL_POOL, SELF, OWNER, TREE_ROOT}
-# temp
-enum SPAWN_PARENT {TREE_ROOT}
+enum SPAWN_PARENT {GLOBAL_POOL, SPAWNER_SELF, SPAWNER_OWNER, SCENE_TREE_ROOT}
 
 # for debugging
 const CLASS_NAME := "EntitySpawner"
 const CLASS_VERBOSE_LOGGING := false
 
-export(PackedScene) var entity_area_scene
-
-export(NodePath) var entity_path: NodePath
-
+# by default the entity spawner is allowed to create ('spawn') its entity
+# by setting this value to false the entity spawner will acknowledge requests
+# to create entities (run timer loops, recieve signals, etc) but will not
+# actually create new entities when asked.
+export(bool) var is_enabled: bool = true
+# whether to duplicate a root entity node or instance a presaved entity scene
 export(NEW_SPAWN_METHOD) var spawn_method := NEW_SPAWN_METHOD.EITHER
-
-export(SPAWN_PARENT) var entity_parent := SPAWN_PARENT.TREE_ROOT
+# scene tree path to a root entity node (see NEW_SPAWN_METHOD.DUPLICATE)
+export(NodePath) var entity_path: NodePath
+# resource path to a presaved entity scene (see NEW_SPAWN_METHOD.INSTANCE)
+export(PackedScene) var entity_area_scene
+# where to place the entity in the scene tree when created
+export(SPAWN_PARENT) var entity_parent := SPAWN_PARENT.GLOBAL_POOL
 
 # position offset of newly spawned entity, based on spawner position
 export(Vector2) var spawn_offset := Vector2.ZERO
@@ -65,14 +69,11 @@ export(Vector2) var spawn_offset := Vector2.ZERO
 # use -> list property name as key, and property value as value
 export(Dictionary) var force_properties := {}
 
-# by default the entity spawner is allowed to create ('spawn') its entity
-# by setting this value to false the entity spawner will acknowledge requests
-# to create entities (run timer loops, recieve signals, etc) but will not
-# actually create new entities when asked.
-export(bool) var is_enabled: bool = true
-
+# entity registers, for whether an entity is currently active or not
+# entities removed from play should change their .is_active property to false
+# in order to trigger the signal that updates the register on their spawner
+#//note: would dict with reference key and bool value be faster?
 var active_entities = []
-
 var inactive_entities = []
 
 # node reference to the entity to create
@@ -107,17 +108,23 @@ func spawn() -> void:
 		new_entity = _new_spawn()
 	# else use the oldest entity in the inactive entity register
 	else:
+		#//note: better to use pop back and update active register?
 		new_entity = inactive_entities[0]
 		_on_entity_enabled(new_entity)
-	#
-	# check if valid
+	
+	# check if valid,
+	# must be correct class (or extended from) and inside tree
+	var entity_spawn_successful := false
 	if new_entity is EntityArea:
-		# start of spawn process
-		emit_signal("entity_spawning", new_entity)
-		new_entity.global_position = global_position+spawn_offset
-		# end of spawn process
-		emit_signal("entity_spawned", new_entity)
-	else:
+		if new_entity.is_inside_tree():
+			# start of spawn process
+			emit_signal("entity_spawning", new_entity)
+			new_entity.global_position = global_position+spawn_offset
+			entity_spawn_successful = true
+			# end of spawn process
+			emit_signal("entity_spawned", new_entity)
+	# invalid endpoint, log
+	if not entity_spawn_successful:
 		GlobalDebug.log_error(CLASS_NAME, "spawn", "invalid entity")
 
 
@@ -139,9 +146,14 @@ func _assign_entity_parent(
 		else:
 			return
 	
-	#//TODO finish entity parent options
 	match entity_parent:
-		SPAWN_PARENT.TREE_ROOT:
+		SPAWN_PARENT.GLOBAL_POOL:
+			GlobalPool.call_deferred("add_child", passed_entity)
+		SPAWN_PARENT.SPAWNER_SELF:
+			self.call_deferred("add_child", passed_entity)
+		SPAWN_PARENT.SPAWNER_OWNER:
+			owner.call_deferred("add_child", passed_entity)
+		SPAWN_PARENT.SCENE_TREE_ROOT:
 			get_tree().root.call_deferred("add_child", passed_entity)
 
 
@@ -200,6 +212,9 @@ func _on_entity_enabled(arg_entity_node: EntityArea):
 		inactive_entities.erase(arg_entity_node)
 	if not (arg_entity_node in active_entities):
 		active_entities.append(arg_entity_node)
+	# if not in tree, add a parent
+	if not arg_entity_node.is_inside_tree():
+		_assign_entity_parent(arg_entity_node, true)
 
 
 # gateway for _entity_state_update, called if entity emits 'is_disabled' signal
