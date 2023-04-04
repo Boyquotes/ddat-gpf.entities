@@ -58,6 +58,13 @@ export(NEW_SPAWN_METHOD) var spawn_method := NEW_SPAWN_METHOD.EITHER
 
 export(SPAWN_PARENT) var entity_parent := SPAWN_PARENT.TREE_ROOT
 
+# position offset of newly spawned entity, based on spawner position
+export(Vector2) var spawn_offset := Vector2.ZERO
+
+# allows you to configure initial properties on a spawned entity
+# use -> list property name as key, and property value as value
+export(Dictionary) var force_properties := {}
+
 # by default the entity spawner is allowed to create ('spawn') its entity
 # by setting this value to false the entity spawner will acknowledge requests
 # to create entities (run timer loops, recieve signals, etc) but will not
@@ -98,53 +105,44 @@ func spawn() -> void:
 	# attempt to create a new entity if there are no unused entities available
 	if inactive_entities.empty():
 		new_entity = _new_spawn()
+	# else use the oldest entity in the inactive entity register
 	else:
-		#//TODO object pooling here
-		pass
+		new_entity = inactive_entities[0]
+		_on_entity_enabled(new_entity)
 	#
 	# check if valid
 	if new_entity is EntityArea:
 		# start of spawn process
 		emit_signal("entity_spawning", new_entity)
-		new_entity.global_position = global_position
-		#// need to add movement behaviour #propertyassignment
-		new_entity.visible = true
-		_assign_entity_parent(new_entity)
+		new_entity.global_position = global_position+spawn_offset
 		# end of spawn process
 		emit_signal("entity_spawned", new_entity)
 	else:
 		GlobalDebug.log_error(CLASS_NAME, "spawn", "invalid entity")
 
 
+##############################################################################
+
+# private methods
+
+
 func _assign_entity_parent(
 		passed_entity: EntityArea,
 		force_parent_change: bool = false
 		) -> void:
-	# if already in the tree, force a parent change
-	if passed_entity.is_inside_tree() and force_parent_change:
-		passed_entity.get_parent().call_deferred("remove_child", passed_entity)
-		yield(passed_entity, "tree_exited")
-	#
+	# if already in the tree, force a parent change or abandon
+	if passed_entity.is_inside_tree():
+		if force_parent_change:
+			passed_entity.get_parent().call_deferred("remove_child", passed_entity)
+			yield(passed_entity, "tree_exited")
+		# if in tree already, do nothing
+		else:
+			return
+	
 	#//TODO finish entity parent options
 	match entity_parent:
 		SPAWN_PARENT.TREE_ROOT:
 			get_tree().root.call_deferred("add_child", passed_entity)
-
-
-# gateway for _entity_state_update, called if entity emits 'is_enabled' signal
-func _on_entity_enabled(arg_entity_node: EntityArea):
-	if (arg_entity_node in inactive_entities):
-		inactive_entities.erase(arg_entity_node)
-	if not (arg_entity_node in active_entities):
-		active_entities.append(arg_entity_node)
-
-
-# gateway for _entity_state_update, called if entity emits 'is_disabled' signal
-func _on_entity_disabled(arg_entity_node: EntityArea):
-	if (arg_entity_node in active_entities):
-		active_entities.erase(arg_entity_node)
-	if not (arg_entity_node in inactive_entities):
-		inactive_entities.append(arg_entity_node)
 
 
 # prioritise duplication spawning method
@@ -169,6 +167,8 @@ func _new_spawn():
 		# 'active_entities' and 'inactive_entities' registers
 		new_entity.connect("_on_entity_disabled", self,
 				"_entity_disabled", [new_entity])
+		# if new entity, assign it a parent and add it to the tree
+		_assign_entity_parent(new_entity)
 	# make sure on return to check if new_entity is valid, this can return null
 	return new_entity
 
@@ -192,21 +192,22 @@ func _new_spawn_by_instance():
 		new_entity = entity_area_scene.instance()
 	# can return null
 	return new_entity
-	
-
-func _old_new_spawn_method():
-	var new_entity: Node2D = Node2D.new()
-	new_entity.global_position = self.global_position
-	#//replace with globalPool in future implementation
-	var entity_root = get_tree().root
-	# do not add new entities as a child of the spawner else it will produce
-	# unwanted movement behaviour (inheriting spawner global position changes)
-	entity_root.call_deferred("add_child", new_entity)
 
 
-##############################################################################
+# gateway for _entity_state_update, called if entity emits 'is_enabled' signal
+func _on_entity_enabled(arg_entity_node: EntityArea):
+	if (arg_entity_node in inactive_entities):
+		inactive_entities.erase(arg_entity_node)
+	if not (arg_entity_node in active_entities):
+		active_entities.append(arg_entity_node)
 
-# private methods
+
+# gateway for _entity_state_update, called if entity emits 'is_disabled' signal
+func _on_entity_disabled(arg_entity_node: EntityArea):
+	if (arg_entity_node in active_entities):
+		active_entities.erase(arg_entity_node)
+	if not (arg_entity_node in inactive_entities):
+		inactive_entities.append(arg_entity_node)
 
 
 
