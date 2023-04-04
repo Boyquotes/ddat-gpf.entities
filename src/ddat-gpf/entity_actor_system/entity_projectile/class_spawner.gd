@@ -93,6 +93,10 @@ func _new_spawn():
 	# if valid, update the registers
 	if new_entity is EntityArea:
 		_entity_state_update(new_entity, true)
+		# when the entity changes active state it should update the spawner's
+		# 'active_entities' and 'inactive_entities' registers
+		new_entity.connect("is_active", self,
+				"_entity_state_update", [new_entity])
 	# make sure on return to check if new_entity is valid, this can return null
 	return new_entity
 

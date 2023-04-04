@@ -15,6 +15,9 @@ class_name EntityArea
 
 ##############################################################################
 
+# if the is_active property is changed it emits this signal
+signal is_active(active_state)
+
 # for passing to error logging
 const CLASS_NAME := "EntityArea"
 ## for developer use, enable if making changes
@@ -22,10 +25,20 @@ const CLASS_NAME := "EntityArea"
 
 # is the entity currently allowed to perform behaviour?
 # disable this flag if you wish the entity to temporarily stop behaviour
-var is_active := false
+var is_active := false setget _set_is_active
 # was setup performed correctly for this entity
 # enable this flag after all setup methods return succesfully
 var is_valid := false
+
+##############################################################################
+
+# setters and getters
+
+
+func _set_is_active(arg_value):
+	is_active = arg_value
+	emit_signal("is_active", is_active)
+
 
 ##############################################################################
 
