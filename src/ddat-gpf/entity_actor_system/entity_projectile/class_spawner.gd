@@ -66,6 +66,17 @@ func spawn():
 	var new_entity
 	if inactive_entities.empty():
 		new_entity = _new_spawn()
+	if new_entity is EntityArea:
+		new_entity.global_position = global_position
+		#// need to add movement behaviour
+		#// need to add setup/validation for each spawner method?
+		#// stick to one spawner method?
+		new_entity.visible = true
+		print("hi")
+	else:
+		print("fail")
+	
+	#//TODO add object pooling behaviour
 
 
 # whether an entity is made inactive or active
