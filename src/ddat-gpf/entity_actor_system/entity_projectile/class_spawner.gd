@@ -18,13 +18,18 @@ class_name EntitySpawner
 #		on '_new_spawn()' calls, entities will be instanced from this preload
 #
 # If both above setups are valid, the first (duplicate) will be preferred
+# if spawn_method is set to NEW_SPAWN_METHOD.EITHER
 #
-# Afterwards call the 'spawn()' method to ask the entitySpawner to create one
-# of the
+# Afterwards call the 'spawn()' method to ask the entitySpawner to either
+# create a new entity, if none are available in the inactive entity register,
+# or repurpose an older entity.
 
-#//TODO
-# test both usage methods above
+#####
 
+# Spawners can set entities active but cannot set them inactive, only an
+# entity can decide when it is no longer in use (such as when it leaves the
+# screen, moves outside of a maximum range, exists for its maximum duration,
+# or has a collision event).
 
 ##############################################################################
 
@@ -33,15 +38,23 @@ signal entity_spawning(new_entity)
 # when spawned (after in tree)
 signal entity_spawned(new_entity)
 
+enum NEW_SPAWN_METHOD {EITHER, DUPLICATE, INSTANCE}
+
 # options for where to  place the newly spawned entity within the scene tree
 # end goal
 #enum SPAWN_PARENT {GLOBAL_POOL, SELF, OWNER, TREE_ROOT}
 # temp
 enum SPAWN_PARENT {TREE_ROOT}
 
+# for debugging
+const CLASS_NAME := "EntitySpawner"
+const CLASS_VERBOSE_LOGGING := false
+
 export(PackedScene) var entity_area_scene
 
 export(NodePath) var entity_path: NodePath
+
+export(NEW_SPAWN_METHOD) var spawn_method := NEW_SPAWN_METHOD.EITHER
 
 export(SPAWN_PARENT) var entity_parent := SPAWN_PARENT.TREE_ROOT
 
@@ -66,6 +79,8 @@ onready var spawner_entity :=\
 # virtual methods
 
 
+#func _ready():
+#	pass
 
 
 ##############################################################################
@@ -75,25 +90,30 @@ onready var spawner_entity :=\
 
 # object pooling system which will reference inactive/active registers of
 # entities and either create a new entity, or reuse an old disabled entity.
-func spawn():
+# returns null if invalid
+func spawn() -> void:
+	if not is_enabled:
+		return
 	var new_entity
+	# attempt to create a new entity if there are no unused entities available
 	if inactive_entities.empty():
 		new_entity = _new_spawn()
+	else:
+		#//TODO object pooling here
+		pass
+	#
+	# check if valid
 	if new_entity is EntityArea:
+		# start of spawn process
 		emit_signal("entity_spawning", new_entity)
 		new_entity.global_position = global_position
-		#// need to add movement behaviour
-		#// need to add setup/validation for each spawner method?
-		#// stick to one spawner method?
+		#// need to add movement behaviour #propertyassignment
 		new_entity.visible = true
-		print("hi")
 		_assign_entity_parent(new_entity)
-#		yield(_assign_entity_parent(new_entity), "completed")
+		# end of spawn process
 		emit_signal("entity_spawned", new_entity)
 	else:
-		print("fail")
-	
-	#//TODO add object pooling behaviour
+		GlobalDebug.log_error(CLASS_NAME, "spawn", "invalid entity")
 
 
 func _assign_entity_parent(
@@ -109,6 +129,18 @@ func _assign_entity_parent(
 	match entity_parent:
 		SPAWN_PARENT.TREE_ROOT:
 			get_tree().root.call_deferred("add_child", passed_entity)
+
+
+# gateway for _entity_state_update, called if entity emits 'is_enabled' signal
+func _entity_enabled(arg_entity_node: EntityArea):
+	#//TODO, validation and replace entity_state_update behaviour
+	_entity_state_update(arg_entity_node, true)
+
+
+# gateway for _entity_state_update, called if entity emits 'is_disabled' signal
+func _entity_disabled(arg_entity_node: EntityArea):
+	#//TODO, validation and replace entity_state_update behaviour
+	_entity_state_update(arg_entity_node, false)
 
 
 # whether an entity is made inactive or active
@@ -129,17 +161,24 @@ func _entity_state_update(arg_entity_node: EntityArea, arg_is_enabled: bool):
 # returns null if unable to spawn an entity
 func _new_spawn():
 	var new_entity = null
-	if spawner_entity is EntityArea:
-		new_entity = _new_spawn_by_duplicate()
-	elif entity_area_scene != null:
-		new_entity = _new_spawn_by_instance()
+	# spawn_method duplicate root entity
+	if (spawn_method == NEW_SPAWN_METHOD.EITHER)\
+	or (spawn_method == NEW_SPAWN_METHOD.DUPLICATE):
+		if spawner_entity is EntityArea:
+			new_entity = _new_spawn_by_duplicate()
+	# spawn_method instance entity from premade scene
+	if (spawn_method == NEW_SPAWN_METHOD.EITHER)\
+	or (spawn_method == NEW_SPAWN_METHOD.INSTANCE):
+		if entity_area_scene != null:
+			new_entity = _new_spawn_by_instance()
+	#
 	# if valid, update the registers
 	if new_entity is EntityArea:
 		_entity_state_update(new_entity, true)
 		# when the entity changes active state it should update the spawner's
 		# 'active_entities' and 'inactive_entities' registers
-		new_entity.connect("is_active", self,
-				"_entity_state_update", [new_entity])
+		new_entity.connect("is_disabled", self,
+				"_entity_disabled", [new_entity])
 	# make sure on return to check if new_entity is valid, this can return null
 	return new_entity
 
