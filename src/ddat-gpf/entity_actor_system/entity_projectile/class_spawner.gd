@@ -24,12 +24,21 @@ class_name EntitySpawner
 # create a new entity, if none are available in the inactive entity register,
 # or repurpose an older entity.
 
-#####
-
+# [Notes]
 # Spawners can set entities active but cannot set them inactive, only an
 # entity can decide when it is no longer in use (such as when it leaves the
 # screen, moves outside of a maximum range, exists for its maximum duration,
 # or has a collision event).
+
+#//TODO
+#	spawnPatterns, i.e. a way to have multiple entities per spawn and/or
+#		properties that differ per entity (e.g. every even is different to
+#		every odd, or every 3rd does something different)
+#		spawn patterns should be combinable and include properties such as:
+#		- additional spawn_offset per entity
+#		- delay between spawns
+#		- travel_vector_adjustment (spread) between spawns
+#		- (see 'project ptp' repo for more ideas)
 
 ##############################################################################
 
@@ -76,10 +85,8 @@ export(Dictionary) var force_properties := {}
 var active_entities = []
 var inactive_entities = []
 
-# node reference to the entity to create
-# is set to null if the path is invalid
-onready var spawner_entity :=\
-		get_node_or_null(entity_path)
+# node reference to the entity to create (set to null if the path is invalid)
+onready var spawner_entity := get_node_or_null(entity_path)
 
 
 ##############################################################################
