@@ -28,9 +28,22 @@ class_name EntitySpawner
 
 ##############################################################################
 
+# on about to spawn (before joining tree/parent change, before parameters set)
+signal entity_spawning(new_entity)
+# when spawned (after in tree)
+signal entity_spawned(new_entity)
+
+# options for where to  place the newly spawned entity within the scene tree
+# end goal
+#enum SPAWN_PARENT {GLOBAL_POOL, SELF, OWNER, TREE_ROOT}
+# temp
+enum SPAWN_PARENT {TREE_ROOT}
+
 export(PackedScene) var entity_area_scene
 
 export(NodePath) var entity_path: NodePath
+
+export(SPAWN_PARENT) var entity_parent := SPAWN_PARENT.TREE_ROOT
 
 # by default the entity spawner is allowed to create ('spawn') its entity
 # by setting this value to false the entity spawner will acknowledge requests
@@ -67,16 +80,35 @@ func spawn():
 	if inactive_entities.empty():
 		new_entity = _new_spawn()
 	if new_entity is EntityArea:
+		emit_signal("entity_spawning", new_entity)
 		new_entity.global_position = global_position
 		#// need to add movement behaviour
 		#// need to add setup/validation for each spawner method?
 		#// stick to one spawner method?
 		new_entity.visible = true
 		print("hi")
+		_assign_entity_parent(new_entity)
+#		yield(_assign_entity_parent(new_entity), "completed")
+		emit_signal("entity_spawned", new_entity)
 	else:
 		print("fail")
 	
 	#//TODO add object pooling behaviour
+
+
+func _assign_entity_parent(
+		passed_entity: EntityArea,
+		force_parent_change: bool = false
+		) -> void:
+	# if already in the tree, force a parent change
+	if passed_entity.is_inside_tree() and force_parent_change:
+		passed_entity.get_parent().call_deferred("remove_child", passed_entity)
+		yield(passed_entity, "tree_exited")
+	#
+	#//TODO finish entity parent options
+	match entity_parent:
+		SPAWN_PARENT.TREE_ROOT:
+			get_tree().root.call_deferred("add_child", passed_entity)
 
 
 # whether an entity is made inactive or active
