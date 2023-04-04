@@ -40,6 +40,61 @@ class_name EntitySpawner
 #		- travel_vector_adjustment (spread) between spawns
 #		- (see 'project ptp' repo for more ideas)
 
+#	Do with a readymade dict?
+#i.e.
+export(Dictionary) var temp_nested_dict = {
+	"dict1" : {
+		"property1" : 3,
+		"property2" : 1,
+	},
+	"dict2" : {
+		"property1" : 10,
+		"property2" : 4,
+	},
+}
+# acts as a forced property dict but only for specific entities
+# overrides the forced property dict if the property is present (but goes
+# with the forced property dict if it isn't present in this dict)
+# change force properties to 'base properties'
+# call this dict 'pattern properties'
+#
+# key is entity spawn count multiple of
+# e.g.	"2" = every 2nd entity
+#		"3" = every 3rd entity
+# 'not' inverts the key
+# e.g.	"not4" = every entity except every 4th
+# '*' means 'this entity only'
+# e.g.	"*1" means 1st entity spawned only
+# '(x)' means 'only if at least this number of entities on spawn'
+# e.g.	"*1(3)" is 1st entity spawned only if at least 3 entities on spawn
+# '+x' means 'every x entities add this property to base'
+# '-x' means the same but subtract rather than add
+# e.g.	"+1" means the properties within are increased by value every entity
+#		"-2" means the properties within are decreased by value per 2nd entity
+
+# this counts per spawn
+# total spawned entities per spawn should be a separate property
+
+# dict values should be able to suggest 'use positive value of this property'
+# and 'use negative value of this property'
+# i.e. +spread vs -spread
+# perhaps use the + and - symbol along with property name as string, so
+# "spread":"+spread"
+#
+# cumulatively this allows for things such as:
+#	alternating shots = "2":is_disabled=true {or} "not2":is_disabled=true
+#	ruthless shots = "3": +damage, +size, +audio_db
+#	burst fire = "+1": +spread, +spread_variance
+#	spread shots =	"*1(3)":spread=nil/0.0,		< 1st proj @3+ go forward
+#					"2(2)":+spread,				< even proj @2+ angles downward
+#					"not2(2)":-spread,			< odd proj @2+ angles upward
+#					"+2(4)": spread_gain		< even proj @4+, increase angle
+
+# since these property adjustments stack on top of base properties (which are
+# straight overwrites), they can be used for modifiers by having a "1" dict
+# ("1" = every entity)
+# any dict without a key matching patterns above is ignored
+
 ##############################################################################
 
 # on about to spawn (before joining tree/parent change, before parameters set)
