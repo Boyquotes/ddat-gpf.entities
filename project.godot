@@ -159,6 +159,7 @@ run/description="workspace to focus on developing (part of the Godot prototyping
 GlobalData="*res://src/ddat-gpf/autoload/global_data.gd"
 GlobalDebug="*res://src/ddat-gpf/autoload/global_debug.gd"
 GlobalDevTools="*res://src/ddat-gpf/autoload/global_devtools.tscn"
+GlobalPool="*res://src/ddat-gpf/entity_actor_system/object_pooling/autoload/global_pool.gd"
 
 [debug]
 
