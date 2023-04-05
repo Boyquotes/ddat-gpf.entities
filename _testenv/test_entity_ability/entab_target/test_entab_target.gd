@@ -48,11 +48,6 @@ func restart_tween_test():
 			1.4, Tween.TRANS_LINEAR, Tween.EASE_IN_OUT)
 	tween_node.start()
 
-var ability_activation_count = 0
-func _on_EntityAbilityController_activate_ability():
-	ability_activation_count += 1
-	print("ability activated, count: {x}".format({"x": ability_activation_count}))
-
 
 func _on_EntityAbilityTargeter_update_target(arg_target_position):
 	rot_target_line.look_at(arg_target_position)
