@@ -141,6 +141,11 @@ func _process(arg_delta):
 	# count time input has been held
 	if is_input_being_held:
 		frames_input_has_been_held += arg_delta
+		if (frames_input_has_been_held>=min_hold_duration):
+			emit_signal("input_held", 1.0)
+		else:
+			emit_signal("input_held",\
+					(frames_input_has_been_held/min_hold_duration))
 	
 	if activation_mode == ACTIVATION.ON_INTERVAL:
 		# (checked during ACTIVATION.INTERVAL mode)
@@ -176,8 +181,6 @@ func _input(arg_event):
 			
 			# input must be held
 			ACTIVATION.INPUT_CONFIRMED_HOLD:
-				emit_signal("input_held",
-						(min_hold_duration>=frames_input_has_been_held))
 				self.is_input_checking_active = true
 				is_input_being_held = true
 	
