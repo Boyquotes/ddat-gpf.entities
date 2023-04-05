@@ -129,6 +129,34 @@ func _set_is_targeting_active(arg_value):
 # virtual methods
 
 
+# auto connect reticule handling behaviours to parent activation controller
+func _enter_tree():
+	var parent_node = get_parent()
+	if parent_node is ActivationController:
+		var signal_connection_state_1 := false
+		var signal_connection_state_2 := false
+		signal_connection_state_1 = GlobalFunc.confirm_signal(\
+				true, parent_node, self,
+				"activate_ability", "_show_reticule_on_activation")
+		signal_connection_state_2 = GlobalFunc.confirm_signal(\
+				true, parent_node, self,
+				"activate_ability", "_show_reticule_on_activation")
+
+
+# auto connect reticule handling behaviours to parent activation controller
+func _exit_tree():
+	var parent_node = get_parent()
+	if parent_node is ActivationController:
+		var signal_connection_state_1 := false
+		var signal_connection_state_2 := false
+		signal_connection_state_1 = GlobalFunc.confirm_signal(\
+				false, parent_node, self,
+				"activate_ability", "_show_reticule_on_activation")
+		signal_connection_state_2 = GlobalFunc.confirm_signal(\
+				false, parent_node, self,
+				"activate_ability", "_show_reticule_on_activation")
+
+
 # call setters and getters
 func _ready():
 	self.selection_mode = selection_mode
