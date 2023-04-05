@@ -29,7 +29,16 @@ class_name ActivationController
 signal activate_ability()
 # applies every frame that input is held (applies on CONFIRMED_HOLD)
 # parameter is whether the minimum hold duration is reached
-signal input_held(minimum_hold_reached)
+signal input_held(hold_dur_left)
+# emitted on the frame the activation input is released
+signal held_input_released()
+# emitted under INPUT_CONFIRMED_PRESS or INPUT_CONFIRMED_HOLD only
+# INPUT_CONFIRMED_PRESS; emitted as true on first input press, false when
+#	either the input is confirmed or is now invalid
+# INPUT_CONFIRMED_HOLD; emitted as true the first frame input is pressed,
+#	and false when the input is released or is now invalid
+# this signal can be connected to ability targeters to show/hide reticules
+signal input_confirming(is_waiting)
 
 # how input affects the activation of the ability
 # INPUT_ACTIVATED ~ input activates, effect triggers once
@@ -173,10 +182,14 @@ func _input(arg_event):
 				# input has been previously pressed
 				if is_input_checking_active\
 				and frames_since_last_valid_input < max_input_separation:
+					emit_signal("input_confirming", false)
 					self.is_input_checking_active = false
 					activate()
 				# input not previously pressed
 				else:
+					# if first press
+					if is_input_checking_active == false:
+						emit_signal("input_confirming", true)
 					self.is_input_checking_active = true
 			
 			# input must be held
@@ -190,6 +203,7 @@ func _input(arg_event):
 			is_input_being_held = false
 		if is_input_checking_active:
 			self.is_input_checking_active = false
+		emit_signal("input_confirming", false)
 	
 	# handle confirmed held release
 	if is_input_being_held\
@@ -199,6 +213,8 @@ func _input(arg_event):
 			if frames_input_has_been_held >= min_hold_duration:
 				activate()
 			frames_input_has_been_held = 0.0
+			emit_signal("held_input_released")
+			emit_signal("input_confirming", false)
 
 
 ##############################################################################
