@@ -4,8 +4,6 @@
 [ext_resource path="res://_testenv/test_entity_ability/entab_input/test_entab_input.gd" type="Script" id=3]
 [ext_resource path="res://_dev/ddat_icon.png" type="Texture" id=4]
 
-
-
 [node name="EntityAbilityInputTest" type="Node2D"]
 script = ExtResource( 3 )
 
@@ -17,12 +15,20 @@ texture = ExtResource( 4 )
 [node name="CenterOfScreen" type="Position2D" parent="."]
 position = Vector2( 960, 540 )
 
-[node name="EntityAbilityController" type="Node2D" parent="CenterOfScreen"]
+[node name="ActivationController" type="Node2D" parent="CenterOfScreen"]
 position = Vector2( -960, -540 )
 script = ExtResource( 1 )
 activation_mode = 3
 use_ability_action = "ui_accept"
 target_clear_action = "ui_cancel"
 min_hold_duration = 2.0
-reticule_mode = 2
-path_to_reticule_sprite = NodePath("../../SampleTargetSprite")
+
+[node name="DebugLabel" type="Label" parent="."]
+margin_left = 190.0
+margin_top = 164.0
+margin_right = 230.0
+margin_bottom = 178.0
+rect_scale = Vector2( 1.5, 1.5 )
+
+[connection signal="activate_ability" from="CenterOfScreen/ActivationController" to="." method="_on_ActivationController_activate_ability"]
+[connection signal="input_held" from="CenterOfScreen/ActivationController" to="." method="_on_ActivationController_input_held"]
