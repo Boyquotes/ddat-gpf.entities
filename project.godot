@@ -105,6 +105,7 @@ run/description="workspace to focus on developing (part of the Godot prototyping
 GlobalData="*res://src/ddat-gpf/autoload/global_data.gd"
 GlobalDebug="*res://src/ddat-gpf/autoload/global_debug.gd"
 GlobalDevTools="*res://src/ddat-gpf/autoload/global_devtools.tscn"
+GlobalFunc="*res://src/ddat-gpf/autoload/global_functions.gd"
 GlobalPool="*res://src/ddat-gpf/entity_actor_system/object_pooling/autoload/global_pool.gd"
 
 [debug]
@@ -115,8 +116,6 @@ settings/stdout/verbose_stdout=true
 
 window/size/width=1920
 window/size/height=1080
-window/size/test_width=960
-window/size/test_height=540
 
 [editor]
 
