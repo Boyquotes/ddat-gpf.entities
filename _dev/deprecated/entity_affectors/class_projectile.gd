@@ -1,6 +1,6 @@
 extends EntityAffector
 
-class_name Projectile
+#class_name Projectile
 
 ##############################################################################
 
@@ -47,9 +47,12 @@ var _turning_agility: int = 0
 
 # setters and getters
 
-#//TODO
+#//legacytod0
 # func _set_current_target() #for validating and connecting/removing previous
 # func _set_retarget_frequency() #for handling the timer node
+#// add tracking behaviour for current_target set
+#// sort out current target behaviour override in _process_movement
+#// FINISH set_target
 
 ##############################################################################
 
@@ -69,13 +72,11 @@ func _process(delta):
 	_process_node_rotation(delta)
 	_process_sprite_rotation(delta)
 	_process_movement(delta)
-	#//TODO add tracking behaviour for current_target set
 
 
 func _process_movement(dt: float) -> void:
 	var my_dir: Vector2
 	# if no forced direction is set, use facing for movement instead
-	#//TODO sort out current target behaviour override
 	if _forced_direction != Vector2.ZERO:
 		my_dir = _forced_direction
 	else:
@@ -115,7 +116,6 @@ func force_direction(arg_direction: Vector2) -> void:
 	self._forced_direction = arg_direction
 
 
-#//TODO FINISH
 # this method sets all variables necessary for projectile 'seek' a target
 #[params as follows]
 #1, "arg_target", is the node the projectile will seek. Projectile will follow

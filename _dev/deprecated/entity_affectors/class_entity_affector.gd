@@ -1,6 +1,6 @@
 extends Area2D
 
-class_name EntityAffector
+#class_name EntityAffector
 
 ##############################################################################
 

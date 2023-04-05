@@ -1,6 +1,6 @@
 extends ActionCondition
 
-class_name ActionConditionOnInput
+#class_name ActionConditionOnInput
 
 ##############################################################################
 #
@@ -8,20 +8,21 @@ class_name ActionConditionOnInput
 # a specific input action, input after recent input, sequence of inputs,
 # or an input for a specific duration.
 
-#//TODO revisit the condition_state_now_valid conflict with allow_held/
+# legacy tod0
+#// revisit the condition_state_now_valid conflict with allow_held/
 #		is_action_pressed (it doesn't work without forcing it unset and
 #		that in itself will repeatedly trigger the condition_state_now_invalid
 #		signal every frame as well, which could produce undesirable behaviour)
 #		arguments for which signal to use would make more sense
 
-#//TODO	add logic for sequence of action inputs, with support for holds
+#//	add logic for sequence of action inputs, with support for holds
 #		(could this be done with a chain of conditions?)
 
-#//TODO	add support for condition state remaining true for a period
+#//	add support for condition state remaining true for a period
 #		(this ties into the above)
 
 #		[re: timer code taken from actcon_on_interval.gd]
-#//TODO	potentially extend both input & interval action conditions from a
+#//	potentially extend both input & interval action conditions from a
 #		from a common timerActionCondition parent, since they both use two
 #		timers and have the same setup condition (or add a static function
 #		for setup to the actionCondition parent?)
@@ -31,6 +32,18 @@ class_name ActionConditionOnInput
 #		circumstances only (rather than default actionConditionOnInterval
 #		behaviour which is to instantiate both timers straight away)
 
+#legacy TOD0
+#// name repeat_delay_timeout_method
+#// _process_input_pressed arguments for which signal to use would make more sense
+	
+#//
+#	process disable condition state on next frame
+#	single input behaviour
+#	set up timer nodes
+#	held input behaviour
+#	repeat delay behaviour
+#	sequence behaviour
+	
 ##############################################################################
 
 # the specific type of input that this actionCondition registers as
@@ -118,7 +131,6 @@ func _set_held_input_duration(arg_value):
 # if the timer node isn't found, create it
 func _set_repeat_delay(arg_value):
 	repeat_delay = arg_value
-	#//TODO name method
 	var repeat_delay_timeout_method = ""
 	if _validate_timer(repeat_timer_node,
 			repeat_delay_timeout_method) == false:
@@ -179,7 +191,7 @@ func _process_input_pressed(_dt):
 			# otherwise would not emit as the condition state would remain the
 			# same between frames
 			# NOTE: this will trigger the condition_state_now_invalid signal
-			#//TODO arguments for which signal to use would make more sense
+			# t0d0 arguments for which signal to use would make more sense
 			self.condition_state = false
 			action_valid_this_frame = true
 	else:
@@ -238,7 +250,6 @@ func _validate_timer(arg_timer_node, arg_receipt_method: String) -> bool:
 # only call this method if timer reference is null, or timer isn't present
 # inside the tree, or timer isn't a child of this node
 func _initialise_new_manual_timer(arg_receipt_method: String):
-	#//TODO add content
 	var new_timer_node = Timer.new()
 	# manually controlled timer (i.e only runs once and starts again by code)
 	new_timer_node.autostart = false
@@ -278,14 +289,6 @@ func placeholder_debugger_discards():
 	repeats_required = repeats_required
 	last_input = last_input
 	allow_held = allow_held
-	
-	#//TODO
-#	process disable condition state on next frame
-#	single input behaviour
-#	set up timer nodes
-#	held input behaviour
-#	repeat delay behaviour
-#	sequence behaviour
 
 #func _ready():
 #	if Input.is_action_just_pressed("dash_left_player1")

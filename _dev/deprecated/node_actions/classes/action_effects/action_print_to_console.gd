@@ -1,6 +1,6 @@
 extends ActionEffect
 
-class_name ActionEffectPrintToConsole
+#class_name ActionEffectPrintToConsole
 
 ##############################################################################
 #

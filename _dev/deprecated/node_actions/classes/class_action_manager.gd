@@ -1,6 +1,6 @@
 extends Action
 
-class_name ActionManager
+#class_name ActionManager
 
 ##############################################################################
 #
@@ -9,14 +9,14 @@ class_name ActionManager
 # the actionManager then manages calling these effects when the conditions
 # are evaluating correctly.
 
-#//TODO
+#//TOD0
 # add actionGroup behaviour
 # update docs for actionGroups
 # actionCondition grandchildren signal setup
 
 ##############################################################################
 
-#//TODO
+#//TOD0
 # [ActorAction system 0.1]
 # ActionGroups are excluded in this initial implementation.
 # Instead the ActionManager directly manages actions and will perform every
@@ -76,7 +76,7 @@ var is_setup_correctly := false
 
 ##############################################################################
 
-#//TODO
+#//TOD0
 #	connect signal to actionEffect children added to the tree (and on init)
 # 	to track when actionCondition grandchildren are added/removed (and can
 #	update actions_by_condition)

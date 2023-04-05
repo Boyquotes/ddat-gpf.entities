@@ -1,6 +1,6 @@
 extends Node
 
-class_name EntityController
+#class_name EntityController
 
 ##############################################################################
 
@@ -27,9 +27,6 @@ class_name EntityController
 # See the included test_entity_controller scene within the actor entity
 # system repository for an example of this.
 
-#####
-#//TODO
-#	not tracking any other todo items currently
 
 ##############################################################################
 

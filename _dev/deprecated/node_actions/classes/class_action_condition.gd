@@ -1,6 +1,6 @@
 extends Action
 
-class_name ActionCondition
+#class_name ActionCondition
 
 ##############################################################################
 #

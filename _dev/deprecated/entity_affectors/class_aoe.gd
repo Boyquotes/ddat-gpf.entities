@@ -1,6 +1,6 @@
 extends EntityAffector
 
-class_name AreaOfEffect
+#class_name AreaOfEffect
 
 ##############################################################################
 

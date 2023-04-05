@@ -1,6 +1,6 @@
 extends Action
 
-class_name ActionEffect
+#class_name ActionEffect
 
 ##############################################################################
 #
@@ -12,7 +12,7 @@ class_name ActionEffect
 # Included with the ddat-gpf package should be some example classes extended
 # from the ActionEffect class, which actually have functionality.
 
-#//TODO	add behaviour for propagating action_owner through action classes
+#//TOD0	add behaviour for propagating action_owner through action classes
 #		(see _init_action_owner)
 
 ##############################################################################

@@ -1,5 +1,5 @@
 extends Node2D
 
-class_name EntitySpawner
+#class_name EntitySpawner
 
 # UNFINISHED

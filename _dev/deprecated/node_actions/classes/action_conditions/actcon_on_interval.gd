@@ -1,6 +1,6 @@
 extends ActionCondition
 
-class_name ActionConditionOnInterval
+#class_name ActionConditionOnInterval
 
 ##############################################################################
 #
@@ -13,7 +13,7 @@ class_name ActionConditionOnInterval
 #
 # Whilst the active period timer runs, this condition evaluates to true.
 
-#//TODO
+#//legacy tod0
 # need unit testing for growth property behaviour and all signals
 
 ##############################################################################
