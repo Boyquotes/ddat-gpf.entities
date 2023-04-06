@@ -194,6 +194,9 @@ func _input(arg_event):
 			
 			# input must be held
 			ACTIVATION.INPUT_CONFIRMED_HOLD:
+				# emit input-waiting-to-be-confirmed signal on first frame only
+				if not is_input_being_held:
+						emit_signal("input_confirming", true)
 				self.is_input_checking_active = true
 				is_input_being_held = true
 	
