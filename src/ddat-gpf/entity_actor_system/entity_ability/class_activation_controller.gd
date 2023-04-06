@@ -31,7 +31,7 @@ signal activate_ability()
 # parameter is whether the minimum hold duration is reached
 signal input_held(hold_dur_left)
 # emitted on the frame the activation input is released
-signal held_input_released()
+signal held_input_just_released()
 # emitted under INPUT_CONFIRMED_PRESS or INPUT_CONFIRMED_HOLD only
 # INPUT_CONFIRMED_PRESS; emitted as true on first input press, false when
 #	either the input is confirmed or is now invalid
@@ -213,7 +213,7 @@ func _input(arg_event):
 			if frames_input_has_been_held >= min_hold_duration:
 				activate()
 			frames_input_has_been_held = 0.0
-			emit_signal("held_input_released")
+			emit_signal("held_input_just_released")
 			emit_signal("input_confirming", false)
 
 
