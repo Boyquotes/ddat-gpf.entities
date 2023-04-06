@@ -207,6 +207,7 @@ func _process(arg_delta):
 		frames_since_reticule_shown += arg_delta
 		if frames_since_reticule_shown >= show_reticule_duration:
 			frames_since_reticule_shown = 0.0
+			showing_reticule_after_activation = false
 			_change_targeting_reticule_visibility(false)
 
 
@@ -320,6 +321,7 @@ func _show_reticule_on_activation():
 	GlobalDebug.log_success(CLASS_VERBOSE_LOGGING, CLASS_SCRIPT_NAME,
 			"_show_reticule_on_activation", "signal received")
 	if reticule_mode == RETICULE.SHOW_ON_ACTIVATION:
+		frames_since_reticule_shown = 0.0
 		_change_targeting_reticule_visibility(true)
 		showing_reticule_after_activation = true
 

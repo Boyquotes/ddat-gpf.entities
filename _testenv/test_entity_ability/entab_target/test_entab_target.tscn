@@ -20,16 +20,17 @@ position = Vector2( 960, 540 )
 [node name="ActivationController" type="Node2D" parent="CenterOfScreen"]
 position = Vector2( -960, -540 )
 script = ExtResource( 1 )
-activation_mode = 3
+activation_mode = 1
 use_ability_action = "ui_accept"
 target_clear_action = "ui_cancel"
 min_hold_duration = 2.0
+forced_activation_interval = 1.0
 
 [node name="EntityAbilityTargeter" type="Area2D" parent="CenterOfScreen/ActivationController"]
 script = ExtResource( 4 )
 selection_mode = 2
 update_frequency = 0.01
-reticule_mode = 2
+reticule_mode = 1
 path_to_reticule_sprite = NodePath("TargetReticule")
 
 [node name="TargetReticule" type="Sprite" parent="CenterOfScreen/ActivationController/EntityAbilityTargeter"]
