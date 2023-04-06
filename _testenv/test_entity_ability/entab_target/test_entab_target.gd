@@ -3,6 +3,11 @@ extends Node2D
 
 ##############################################################################
 
+# for debugging whether an ability input is actually being recieved
+var ability_activation_count := 0
+# for debug label
+var last_target_position := Vector2.ZERO
+
 onready var rot_target_line = $CenterOfScreen/RotTargetLine
 onready var debug_label = $DebugLabel
 onready var tween_node = $Tween
@@ -22,6 +27,7 @@ func _ready():
 	restart_tween_test()
 	enemy_test_1.add_to_group("groupstring_enemy")
 	enemy_test_2.add_to_group("groupstring_enemy")
+	update_debug_label()
 
 
 var tween_reverse_state := false
@@ -52,8 +58,18 @@ func restart_tween_test():
 func _on_EntityAbilityTargeter_update_target(arg_target_position):
 	rot_target_line.look_at(arg_target_position)
 #	rot_target_line.rotation = rot_target_line.global_position.angle_to(arg_target_position)
-	debug_label.text = str(arg_target_position)
+	last_target_position = arg_target_position
 #	print("target_position is {tp}".format({"tp": arg_target_position}))
+	update_debug_label()
 
 #func _process(_arg_delta):
 #	rot_target_line.look_at(get_global_mouse_position())
+
+func _on_ActivationController_activate_ability():
+	ability_activation_count += 1
+	update_debug_label()
+
+func update_debug_label():
+	debug_label.text =\
+			"last known position: "+str(last_target_position)+"\n"+\
+			"activation count: "+str(ability_activation_count)
