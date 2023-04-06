@@ -62,10 +62,6 @@ enum RETICULE {
 const CLASS_VERBOSE_LOGGING := true
 const CLASS_SCRIPT_NAME := "ActivationController"
 
-# the active targeting reticule mode, see RETICULE
-export(RETICULE) var reticule_mode =\
-		RETICULE.SHOW_ALWAYS
-
 # the node group string to pick potential targets from
 # used as-is this has the potential to negatively impact performance,
 # (especially calculating distance), so to prune potential targets consider;
@@ -83,6 +79,10 @@ export(String) var selector_method := "_get_nearest"
 # how many frames between updating target
 # lower values may cause lag with large numbers of entityAbilityTargeters
 export(float, 0.0, 10.0) var update_frequency := 0.5
+
+# the active targeting reticule mode, see RETICULE
+export(RETICULE) var reticule_mode =\
+		RETICULE.SHOW_ALWAYS
 
 # path to a sprite that displays as the targeting reticule for this ability
 # if no path is set the chosen_targeting_reticule property will default to
@@ -128,33 +128,44 @@ func _set_is_targeting_active(arg_value):
 
 # virtual methods
 
+# property set when reticule signals and parent exit condition are connected,
+# and the reticule node type is validated
+var is_reticule_setup := false
 
 # auto connect reticule handling behaviours to parent activation controller
+# automatically connects confirmed_hold and confirmed_press activation signals
+# to methods that show the reticule for a brief predetermined period
 func _enter_tree():
 	var parent_node = get_parent()
+	var signal_connection_state_1 := false
+	var signal_connection_state_2 := false
 	if parent_node is ActivationController:
-		var signal_connection_state_1 := false
-		var signal_connection_state_2 := false
 		signal_connection_state_1 = GlobalFunc.confirm_signal(\
 				true, parent_node, self,
 				"activate_ability", "_show_reticule_on_activation")
 		signal_connection_state_2 = GlobalFunc.confirm_signal(\
 				true, parent_node, self,
-				"activate_ability", "_show_reticule_on_activation")
+				"input_confirming", "_show_reticule_on_targeting")
+	is_reticule_setup =\
+			(signal_connection_state_1 and signal_connection_state_2)
 
 
 # auto connect reticule handling behaviours to parent activation controller
-func _exit_tree():
-	var parent_node = get_parent()
-	if parent_node is ActivationController:
-		var signal_connection_state_1 := false
-		var signal_connection_state_2 := false
-		signal_connection_state_1 = GlobalFunc.confirm_signal(\
-				false, parent_node, self,
-				"activate_ability", "_show_reticule_on_activation")
-		signal_connection_state_2 = GlobalFunc.confirm_signal(\
-				false, parent_node, self,
-				"activate_ability", "_show_reticule_on_activation")
+# automatically disconnects reticule handling signals from the parent
+# disabled as should happen automatically when a node is removed
+#func _exit_tree():
+#	var parent_node = get_parent()
+#	var signal_connection_state_1 := false
+#	var signal_connection_state_2 := false
+#	if parent_node is ActivationController:
+#		signal_connection_state_1 = GlobalFunc.confirm_signal(\
+#				false, parent_node, self,
+#				"activate_ability", "_show_reticule_on_activation")
+#		signal_connection_state_2 = GlobalFunc.confirm_signal(\
+#				false, parent_node, self,
+#				"input_confirming", "_show_reticule_on_targeting")
+#	is_reticule_setup =\
+#			(signal_connection_state_1 and signal_connection_state_2)
 
 
 # call setters and getters
@@ -291,12 +302,16 @@ func _get_nearest():
 
 
 func _show_reticule_on_activation():
-		if reticule_mode == RETICULE.SHOW_ON_ACTIVATION:
-			_change_targeting_reticule_visibility(true)
-			showing_reticule_after_activation = true
+	GlobalDebug.log_success(CLASS_VERBOSE_LOGGING, CLASS_SCRIPT_NAME,
+			"_show_reticule_on_activation", "signal received")
+	if reticule_mode == RETICULE.SHOW_ON_ACTIVATION:
+		_change_targeting_reticule_visibility(true)
+		showing_reticule_after_activation = true
 
 
 # activation controller INPUT_CONFIRMED_PRESS or INPUT_CONFIRMED_HOLD
 func _show_reticule_on_targeting(target_state: bool):
+	GlobalDebug.log_success(CLASS_VERBOSE_LOGGING, CLASS_SCRIPT_NAME,
+			"_show_reticule_on_targeting", "signal received")
 	self.is_targeting_active = target_state
 
