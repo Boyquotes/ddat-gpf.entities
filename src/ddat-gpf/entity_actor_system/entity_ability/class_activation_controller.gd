@@ -59,11 +59,12 @@ enum ACTIVATION {
 	CONTINUOUS,
 	ON_INTERVAL,
 	ON_SIGNAL,
+	DISABLE_ACTIVATION,
 	}
 
 # disable when finished
 # for dev logging
-const CLASS_VERBOSE_LOGGING := true
+const CLASS_VERBOSE_LOGGING := false
 const CLASS_SCRIPT_NAME := "ActivationController"
 
 # how many times the ability can be activated during each frame
