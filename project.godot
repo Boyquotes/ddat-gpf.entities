@@ -27,7 +27,7 @@ _global_script_classes=[ {
 "base": "EntityArea",
 "class": "AreaOfEffect",
 "language": "GDScript",
-"path": "res://src/ddat-gpf/entity_systems/entity_projectile/class_aoe.gd"
+"path": "res://src/ddat-gpf/entity_systems/entity_extensions/class_aoe.gd"
 }, {
 "base": "Area2D",
 "class": "EntityAbilityTargeter",
@@ -47,7 +47,7 @@ _global_script_classes=[ {
 "base": "Position2D",
 "class": "EntitySpawner",
 "language": "GDScript",
-"path": "res://src/ddat-gpf/entity_systems/entity_projectile/class_entity_spawner.gd"
+"path": "res://src/ddat-gpf/entity_systems/entity_extensions/class_entity_spawner.gd"
 }, {
 "base": "Resource",
 "class": "GameDataContainer",
@@ -72,7 +72,7 @@ _global_script_classes=[ {
 "base": "EntityArea",
 "class": "Projectile",
 "language": "GDScript",
-"path": "res://src/ddat-gpf/entity_systems/entity_projectile/class_projectile.gd"
+"path": "res://src/ddat-gpf/entity_systems/entity_extensions/class_projectile.gd"
 } ]
 _global_script_class_icons={
 "AbilityController": "",
