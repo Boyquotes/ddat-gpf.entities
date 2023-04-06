@@ -6,17 +6,6 @@ class_name AbilityController
 
 # BRAINSTORMING
 #Revising for 23-04-05
-#
-# [EntityAbilityTargeter]
-# FiringArc (max rotate toward target, 0 for fixed) should go to EntityAbilityTargeter
-# Targeter should have a 'allowed_to_rotate_toward' and rotate-toward-speed property
-# Targeter 'rotation' should be an invisible line
-# MOVE TO EntityAbilityTargeter:
-#	TargetGuiding Line:
-#		Visible line2d, for player guidance/optional arg for target-mouselook
-#	TargetAcquisition:
-#		Invisible line that checks if path would collide with ship
-#		(for auto target modes to not fire if would fire through ship)
 
 # [EntitySpawner]
 # SpawnPattern (how many to spawn) is going to EntitySpawner

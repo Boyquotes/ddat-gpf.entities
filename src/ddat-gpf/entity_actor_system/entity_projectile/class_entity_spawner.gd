@@ -72,6 +72,15 @@ export(Dictionary) var temp_nested_dict = {
 # e.g.	"+1" means the properties within are increased by value every entity
 #		"-2" means the properties within are decreased by value per 2nd entity
 
+# need modulus operator i.e. %2 means only if entities are divisible by 2
+
+# also need operator for applying properties based on entity number,
+# # i.e. for spread to be adjusted based on number of ents (more = less spread)
+# (unless this could be done with a property on the entity itself)
+# (spread should be a property on spawner?)
+
+# operator for applying properties to self?
+
 # this counts per spawn
 # total spawned entities per spawn should be a separate property
 
