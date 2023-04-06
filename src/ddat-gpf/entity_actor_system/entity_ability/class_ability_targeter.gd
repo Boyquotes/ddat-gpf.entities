@@ -4,8 +4,19 @@ class_name EntityAbilityTargeter
 
 ##############################################################################
 
-# Use an EntityAbilityTargeter in conjunction with an EntityAbilityController
-# to get the appropriate target for an ability.
+# Use an EntityAbilityTargeter in conjunction with an ActivationController,
+# or ActivationController extended node, to determine target selection for
+# an ability.
+# Can pass active target to a node independently of activation signals,
+# allowing targeting to happen as frequently as need be whilst activation
+# is only processed on the correct input (or other condition).
+
+# An EntityAbilityTargeter's parent in the scene tree should ALWAYS be
+# an ActivationController or ActivationController extended node (such as an
+# AbilityController or ability controller extended node). Certain functions
+# of the targeter may not work if this is not the case.
+
+##############################################################################
 
 #//TODO
 # clean documentation
@@ -114,6 +125,10 @@ var frames_since_reticule_shown := 0.0
 # based methods such as _change_targeting_reticule_visibility
 var targeting_reticule_node: Sprite = null
 
+# property set when reticule signals and parent exit condition are connected,
+# and the reticule node type is validated
+var is_reticule_setup := false
+
 ##############################################################################
 
 # setters and getters
@@ -127,10 +142,6 @@ func _set_is_targeting_active(arg_value):
 ##############################################################################
 
 # virtual methods
-
-# property set when reticule signals and parent exit condition are connected,
-# and the reticule node type is validated
-var is_reticule_setup := false
 
 # auto connect reticule handling behaviours to parent activation controller
 # automatically connects confirmed_hold and confirmed_press activation signals
@@ -255,6 +266,10 @@ func _attempt_to_set_targeting_reticule():
 # some targeting styles need reticule preconfiguration
 # maybe change to setter?
 func _change_targeting_reticule_visibility(arg_show: bool = false):
+	# setup failure, this will be false if parent didn't accept signal
+	# connections on targeter enter_tree, or parent wasn't activationController
+	if not is_reticule_setup:
+		return
 	if targeting_reticule_node != null:
 		targeting_reticule_node.visible = arg_show
 		emit_signal("change_reticule_visibility", arg_show)
