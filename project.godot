@@ -12,42 +12,42 @@ _global_script_classes=[ {
 "base": "ActivationController",
 "class": "AbilityController",
 "language": "GDScript",
-"path": "res://src/ddat-gpf/entity_actor_system/entity_ability/class_ability_controller.gd"
+"path": "res://src/ddat-gpf/entity_systems/entity_ability/class_ability_controller.gd"
 }, {
 "base": "Node2D",
 "class": "ActivationController",
 "language": "GDScript",
-"path": "res://src/ddat-gpf/entity_actor_system/entity_ability/class_activation_controller.gd"
+"path": "res://src/ddat-gpf/entity_systems/entity_ability/class_activation_controller.gd"
 }, {
 "base": "Node2D",
 "class": "Actor",
 "language": "GDScript",
-"path": "res://src/ddat-gpf/entity_actor_system/classes/class_actor.gd"
+"path": "res://src/ddat-gpf/entity_systems/classes/class_actor.gd"
 }, {
 "base": "EntityArea",
 "class": "AreaOfEffect",
 "language": "GDScript",
-"path": "res://src/ddat-gpf/entity_actor_system/entity_projectile/class_aoe.gd"
+"path": "res://src/ddat-gpf/entity_systems/entity_projectile/class_aoe.gd"
 }, {
 "base": "Area2D",
 "class": "EntityAbilityTargeter",
 "language": "GDScript",
-"path": "res://src/ddat-gpf/entity_actor_system/entity_ability/class_ability_targeter.gd"
+"path": "res://src/ddat-gpf/entity_systems/entity_ability/class_ability_targeter.gd"
 }, {
 "base": "Area2D",
 "class": "EntityArea",
 "language": "GDScript",
-"path": "res://src/ddat-gpf/entity_actor_system/classes/class_entity_area.gd"
+"path": "res://src/ddat-gpf/entity_systems/classes/class_entity_area.gd"
 }, {
 "base": "KinematicBody2D",
 "class": "EntityBody",
 "language": "GDScript",
-"path": "res://src/ddat-gpf/entity_actor_system/classes/class_entity_body.gd"
+"path": "res://src/ddat-gpf/entity_systems/classes/class_entity_body.gd"
 }, {
 "base": "Position2D",
 "class": "EntitySpawner",
 "language": "GDScript",
-"path": "res://src/ddat-gpf/entity_actor_system/entity_projectile/class_entity_spawner.gd"
+"path": "res://src/ddat-gpf/entity_systems/entity_projectile/class_entity_spawner.gd"
 }, {
 "base": "Resource",
 "class": "GameDataContainer",
@@ -62,17 +62,17 @@ _global_script_classes=[ {
 "base": "Actor",
 "class": "PlayerActor",
 "language": "GDScript",
-"path": "res://src/ddat-gpf/entity_actor_system/player_controllers/player_actor.gd"
+"path": "res://src/ddat-gpf/entity_systems/player_controllers/player_actor.gd"
 }, {
 "base": "EntityBody",
 "class": "PlayerMovementController",
 "language": "GDScript",
-"path": "res://src/ddat-gpf/entity_actor_system/player_controllers/player_entity.gd"
+"path": "res://src/ddat-gpf/entity_systems/player_controllers/player_entity.gd"
 }, {
 "base": "EntityArea",
 "class": "Projectile",
 "language": "GDScript",
-"path": "res://src/ddat-gpf/entity_actor_system/entity_projectile/class_projectile.gd"
+"path": "res://src/ddat-gpf/entity_systems/entity_projectile/class_projectile.gd"
 } ]
 _global_script_class_icons={
 "AbilityController": "",
@@ -106,7 +106,7 @@ GlobalData="*res://src/ddat-gpf/autoload/global_data.gd"
 GlobalDebug="*res://src/ddat-gpf/autoload/global_debug.gd"
 GlobalDevTools="*res://src/ddat-gpf/autoload/global_devtools.tscn"
 GlobalFunc="*res://src/ddat-gpf/autoload/global_functions.gd"
-GlobalPool="*res://src/ddat-gpf/entity_actor_system/object_pooling/autoload/global_pool.gd"
+GlobalPool="*res://src/ddat-gpf/entity_systems/autoload/global_pool.gd"
 
 [debug]
 

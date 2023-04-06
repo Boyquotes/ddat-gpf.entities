@@ -1,8 +1,8 @@
 [gd_scene load_steps=4 format=2]
 
-[ext_resource path="res://src/ddat-gpf/entity_actor_system/player_controllers/player_actor.gd" type="Script" id=1]
+[ext_resource path="res://src/ddat-gpf/entity_systems/player_controllers/player_actor.gd" type="Script" id=1]
 [ext_resource path="res://_dev/icon.png" type="Texture" id=2]
-[ext_resource path="res://src/ddat-gpf/entity_actor_system/player_controllers/player_entity.gd" type="Script" id=3]
+[ext_resource path="res://src/ddat-gpf/entity_systems/player_controllers/player_entity.gd" type="Script" id=3]
 
 [node name="PlayerActor" type="Node2D"]
 position = Vector2( 971, 457 )

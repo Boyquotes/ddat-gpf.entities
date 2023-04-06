@@ -1,6 +1,6 @@
 [gd_scene load_steps=3 format=2]
 
-[ext_resource path="res://src/ddat-gpf/entity_actor_system/classes/class_entity_area.gd" type="Script" id=1]
+[ext_resource path="res://src/ddat-gpf/entity_systems/classes/class_entity_area.gd" type="Script" id=1]
 [ext_resource path="res://_dev/icon.png" type="Texture" id=2]
 
 [node name="EntityArea" type="Area2D"]

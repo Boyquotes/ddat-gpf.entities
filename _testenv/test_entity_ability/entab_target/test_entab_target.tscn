@@ -1,9 +1,9 @@
 [gd_scene load_steps=6 format=2]
 
-[ext_resource path="res://src/ddat-gpf/entity_actor_system/entity_ability/class_activation_controller.gd" type="Script" id=1]
+[ext_resource path="res://src/ddat-gpf/entity_systems/entity_ability/class_activation_controller.gd" type="Script" id=1]
 [ext_resource path="res://_testenv/test_entity_ability/entab_target/test_entab_target.gd" type="Script" id=2]
 [ext_resource path="res://_dev/ddat_icon.png" type="Texture" id=3]
-[ext_resource path="res://src/ddat-gpf/entity_actor_system/entity_ability/class_ability_targeter.gd" type="Script" id=4]
+[ext_resource path="res://src/ddat-gpf/entity_systems/entity_ability/class_ability_targeter.gd" type="Script" id=4]
 [ext_resource path="res://_dev/icon.png" type="Texture" id=5]
 
 [node name="EntityAbilityTargetTest" type="Node2D"]
