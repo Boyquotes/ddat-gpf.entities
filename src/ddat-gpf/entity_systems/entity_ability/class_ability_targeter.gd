@@ -29,10 +29,12 @@ class_name EntityAbilityTargeter
 
 # pass along the current position of the target
 signal update_target(target_position)
+# emitted when not updating the target, along with the remaining frames until
+# the next update and the proportion (as float) to the next update
+signal update_not_ready(frames_left, proportion_to)
 # if using a non-sprite reticule you can connect this signal to the node
 # for when to show the reticule
 signal change_reticule_visibility(is_visible)
-
 
 # how to target the ability during target selection state
 # when utilising an automatic (prefix AUTO_) target selection mode the position
@@ -190,6 +192,14 @@ func _process(arg_delta):
 			# if it isn't null should only ever pass a vec2
 			assert(current_target_position is Vector2)
 			emit_signal("update_target", current_target_position)
+	# if update doesn't happen this frame, pass along how long it will be
+	# until the next target update (this is useful for ui elements)
+	else:
+		var frames_to_next_update = update_frequency-frames_since_last_update
+		var proportion_to_next_update =\
+				clamp(frames_since_last_update/frames_to_next_update, 0.0, 1.0)
+		emit_signal("update_not_ready",
+				frames_to_next_update, proportion_to_next_update)
 	#
 	# reticule handling
 	# (checked during RETICULE.SHOW_ON_ACTIVATION mode)
