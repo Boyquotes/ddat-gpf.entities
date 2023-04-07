@@ -20,7 +20,6 @@ position = Vector2( 960, 540 )
 [node name="ActivationController" type="Node2D" parent="CenterOfScreen"]
 position = Vector2( -960, -540 )
 script = ExtResource( 1 )
-activation_mode = 1
 use_ability_action = "ui_accept"
 target_clear_action = "ui_cancel"
 min_hold_duration = 2.0
@@ -52,10 +51,27 @@ rect_scale = Vector2( 2, 2 )
 [node name="EnemyTest1" type="Sprite" parent="."]
 texture = ExtResource( 5 )
 
+[node name="NameLabel" type="Label" parent="EnemyTest1"]
+margin_left = -74.0
+margin_top = -57.0
+margin_right = 4.0
+margin_bottom = -43.0
+rect_scale = Vector2( 2, 2 )
+text = "EnemyTest1"
+
 [node name="EnemyTest2" type="Sprite" parent="."]
 texture = ExtResource( 5 )
+
+[node name="NameLabel2" type="Label" parent="EnemyTest2"]
+margin_left = -74.0
+margin_top = -57.0
+margin_right = 4.0
+margin_bottom = -43.0
+rect_scale = Vector2( 2, 2 )
+text = "EnemyTest2"
 
 [node name="Tween" type="Tween" parent="."]
 
 [connection signal="activate_ability" from="CenterOfScreen/ActivationController" to="." method="_on_ActivationController_activate_ability"]
-[connection signal="update_target" from="CenterOfScreen/ActivationController/EntityAbilityTargeter" to="." method="_on_EntityAbilityTargeter_update_target"]
+[connection signal="update_target_position" from="CenterOfScreen/ActivationController/EntityAbilityTargeter" to="." method="_on_EntityAbilityTargeter_update_target_position"]
+[connection signal="update_target_reference" from="CenterOfScreen/ActivationController/EntityAbilityTargeter" to="." method="_on_EntityAbilityTargeter_update_target_reference"]

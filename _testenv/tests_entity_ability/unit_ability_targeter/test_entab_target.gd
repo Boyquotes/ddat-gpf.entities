@@ -7,6 +7,7 @@ extends Node2D
 var ability_activation_count := 0
 # for debug label
 var last_target_position := Vector2.ZERO
+var target_name := ""
 
 onready var rot_target_line = $CenterOfScreen/RotTargetLine
 onready var debug_label = $DebugLabel
@@ -55,13 +56,6 @@ func restart_tween_test():
 	tween_node.start()
 
 
-func _on_EntityAbilityTargeter_update_target(arg_target_position):
-	rot_target_line.look_at(arg_target_position)
-#	rot_target_line.rotation = rot_target_line.global_position.angle_to(arg_target_position)
-	last_target_position = arg_target_position
-#	print("target_position is {tp}".format({"tp": arg_target_position}))
-	update_debug_label()
-
 #func _process(_arg_delta):
 #	rot_target_line.look_at(get_global_mouse_position())
 
@@ -71,5 +65,21 @@ func _on_ActivationController_activate_ability():
 
 func update_debug_label():
 	debug_label.text =\
+			"target: "+str(target_name)+"\n"+\
 			"last known position: "+str(last_target_position)+"\n"+\
 			"activation count: "+str(ability_activation_count)
+
+
+func _on_EntityAbilityTargeter_update_target_position(arg_target_position):
+	rot_target_line.look_at(arg_target_position)
+#	rot_target_line.rotation = rot_target_line.global_position.angle_to(arg_target_position)
+	last_target_position = arg_target_position
+#	print("target_position is {tp}".format({"tp": arg_target_position}))
+	update_debug_label()
+
+
+func _on_EntityAbilityTargeter_update_target_reference(target_reference):
+	if target_reference is Node2D:
+		target_name = target_reference.name
+	update_debug_label()
+
