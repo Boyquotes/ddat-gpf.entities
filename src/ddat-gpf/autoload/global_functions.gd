@@ -20,7 +20,8 @@ func confirm_signal(
 		sender: Node,
 		recipient: Node,
 		signal_string: String,
-		method_string: String
+		method_string: String,
+		binds: Array = []
 		) -> bool:
 	#
 	var signal_return_state := false
@@ -32,7 +33,7 @@ func confirm_signal(
 		# return true
 		if not sender.is_connected(signal_string, recipient, method_string):
 			signal_modify_state =\
-					sender.connect(signal_string, recipient, method_string)
+					sender.connect(signal_string, recipient, method_string, binds)
 			# signal didn't exist so must be connected for return state to be valid
 			signal_return_state = (signal_modify_state == OK)
 		# if already connected under (is_added == true), is valid
