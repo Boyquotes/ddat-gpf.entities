@@ -21,14 +21,17 @@ class_name EntityAbilityTargeter
 #//TODO
 # clean documentation
 
-#//TODO
+#//TODO 
+# (search file)
 
 ##############################################################################
 
 # properties (signals, enums, constants, exports, variables, onreadys)
 
+# pass along a reference to the target
+signal update_target_reference(target_reference)
 # pass along the current position of the target
-signal update_target(target_position)
+signal update_target_position(target_position)
 # emitted when not updating the target, along with the remaining frames until
 # the next update and the proportion (as float) to the next update
 signal update_not_ready(frames_left, proportion_to)
@@ -36,16 +39,22 @@ signal update_not_ready(frames_left, proportion_to)
 # for when to show the reticule
 signal change_reticule_visibility(is_visible)
 
+# the target data to gather and update
+enum RETURN_TYPE {
+	NODE_REFERENCE,
+	GLOBAL_POSITION,
+}
+
 # how to target the ability during target selection state
 # when utilising an automatic (prefix AUTO_) target selection mode the position
 # of this node is considered for distance to the target, so make sure your
 # entityAbilityController nodes are scene tree children of your entities.
 #
-# NONE
-# MOUSE_LOOK
+# NONE - disables all return options
+# MOUSE_LOOK - can only return position, not target reference
 # AUTOMATIC - automatic requires a specified target logic to be set on the
-#	'selector_method' property. This should be a method that returns a vector
-#	toward a Node2D; extend this class to add your own.
+#	'selector_method' property. This should be a method that returns either a
+# Node2D or null; extend this class to add your own selection methods.
 enum SELECTION {
 	NONE,
 	MOUSE_LOOK,
@@ -64,6 +73,12 @@ enum RETICULE {
 # for dev logging
 const CLASS_VERBOSE_LOGGING := false
 const CLASS_SCRIPT_NAME := "ActivationController"
+
+# toggles for which signals you wish to output
+# 'output_target_reference' -> emit signal 'update_target_reference'
+export(bool) var output_target_reference := true
+# 'output_target_position' -> emit signal 'update_target_position'
+export(bool) var output_target_position := true
 
 # the node group string to pick potential targets from
 # used as-is this has the potential to negatively impact performance,
@@ -99,6 +114,8 @@ export(float, 0.0, 60.0) var show_reticule_duration := 0.4
 # delta accumulation since last signal update
 var frames_since_last_update := 0.0
 
+# stored reference of last target
+var current_target
 # stored position of last target
 var current_target_position
 
@@ -185,10 +202,35 @@ func _process(arg_delta):
 	frames_since_last_update += arg_delta
 	if frames_since_last_update >= update_frequency:
 		frames_since_last_update -= update_frequency
-		current_target_position = get_target_position_by_selection()
+		
+		# multiple output methods exist, even though a node reference is
+		# enough to get position, because certain abilities may just wish
+		# to send an ability toward a position or in a specific direction
+		
+		# reference to target handling
+		if output_target_reference:
+			current_target =\
+					get_target_data_by_selection(RETURN_TYPE.NODE_REFERENCE)
+			if current_target != null:
+				emit_signal("update_target_reference", current_target)
+		
+		# position of target handling
+		if output_target_position:
+			if current_target is Node2D:
+				current_target_position = current_target.global_position
+			else:
+				current_target_position =\
+						get_target_data_by_selection(
+						RETURN_TYPE.GLOBAL_POSITION)
+			if current_target_position != null:
+				emit_signal("update_target_position", current_target_position)
+		
+		current_target_position =\
+				get_target_data_by_selection(RETURN_TYPE.GLOBAL_POSITION)
 		# if target was found, update all
 		# can assume in receipient nodes that this passed param is vec2
-		if current_target_position != null:
+		if current_target_position != null\
+		and output_target_position:
 			# if it isn't null should only ever pass a vec2
 			assert(current_target_position is Vector2)
 			emit_signal("update_target", current_target_position)
@@ -216,28 +258,51 @@ func _process(arg_delta):
 # public methods
 
 
-# should return vector2 if target is found, or null if no target was found
-# methods for SELECTION.SELECTOR_METHOD should return a vector2 or null as per
-func get_target_position_by_selection():
+func get_target_data_by_selection(arg_return_type: int):
+	var potential_target = null
 	var potential_target_position = null
 	
+	# ERR catch
+	if not arg_return_type in RETURN_TYPE.values():
+		GlobalDebug.log_error(CLASS_SCRIPT_NAME,
+				"get_target_data_by_selection",
+				"return type argument invalid")
+	
+	# selection mode determines available return types
 	match selection_mode:
 		# get mouse pos
+		# mouse look cannot return node references
 		SELECTION.MOUSE_LOOK:
 #			potential_target_position = get_local_mouse_position()
 			potential_target_position = get_global_mouse_position()
 		
-		# to add
+		# by custom method
+		# methods written for this selection type should always return
+		# node references; position can be taken from there.
+		#//TODO add option for selector method to support position only
+		# from the node reference
 		SELECTION.SELECTOR_METHOD:
 			if selector_method != null:
 				if has_method(selector_method):
-					potential_target_position = call(selector_method)
+					potential_target = call(selector_method)
 	
+	# if potential target is null, cannot return a node ref even if asked for
+	if potential_target is Node2D:
+		if arg_return_type == RETURN_TYPE.NODE_REFERENCE:
+				return potential_target
+		# if not returning node reference we are returning position
+		else:
+			potential_target_position = potential_target.global_position
+	
+	# if no potential target is set (such as in the case of mouse look
+	# selection) then the potential_target_position is set elsewhere
 	if potential_target_position is Vector2:
-		return potential_target_position
-#		return global_position.direction_to(potential_target_position)
-	else:
-		return null
+		if arg_return_type == RETURN_TYPE.GLOBAL_POSITION:
+				return potential_target_position
+	
+	# if no valid output then
+	# catchall end statement
+	return null
 
 
 ##############################################################################
@@ -314,7 +379,7 @@ func _get_nearest():
 						closest_target.global_position.distance_to(\
 						global_position)
 	# retun the globpos of the chosen target
-	return closest_target.global_position
+	return closest_target
 
 
 func _show_reticule_on_activation():
@@ -331,4 +396,44 @@ func _show_reticule_on_targeting(target_state: bool):
 	GlobalDebug.log_success(CLASS_VERBOSE_LOGGING, CLASS_SCRIPT_NAME,
 			"_show_reticule_on_targeting", "signal received")
 	self.is_targeting_active = target_state
+
+
+#//TODO test the tree exit connection
+func _target_clear(arg_target):
+	if arg_target is Node2D:
+		_target_reference_update(arg_target, true)
+
+
+# if argument for is_cleared parameter is true, the current target will
+# be removed and signal connections updated; if left to default of false
+# this method will attempt to set the current target to the argument arg_target
+func _target_reference_update(
+			arg_target: Node2D,
+			arg_is_cleared: bool = false):
+	# attempt to add target
+	if not arg_is_cleared:
+		# target must be in scene tree to be valid
+		if arg_target.is_inside_tree():
+			# connect target to target_clear method
+			# output error if signal doesn't exist and fails to be added
+			if (GlobalFunc.confirm_signal(false,
+					arg_target, self, "tree_exiting", "_target_clear",
+					[arg_target]) == false):
+				GlobalDebug.log_error(CLASS_SCRIPT_NAME,
+						"_target_reference_update",
+						"unable to remove signals to existing target")
+			else:
+				current_target = arg_target
+	# attempt to remove target
+	else:
+		# removed connection of target to target_clear method
+		# output error if signal exists and fails to be removed
+		if (GlobalFunc.confirm_signal(false,
+				arg_target, self, "tree_exiting", "_target_clear")\
+				== false):
+			GlobalDebug.log_error(CLASS_SCRIPT_NAME,
+					"_target_reference_update",
+					"unable to remove signals to existing target")
+		# clear target
+		current_target = null
 
