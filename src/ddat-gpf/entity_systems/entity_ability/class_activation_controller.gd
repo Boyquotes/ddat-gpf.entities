@@ -10,15 +10,6 @@ class_name ActivationController
 # On fulfilling the activation mode condition the controller emits a signal
 # that can be tied to custom behaviour in child nodes.
 
-#//TODO
-#	event on every frame (_process Input.pressed) instead of on input
-#	add activate at minimum hold option (rather than on release after)
-#	dynamic reticule that has a conditional bool state (rather than default
-#		reticule per activationController)
-#	reticule support for target lines
-#	setting for reticule positoning, fixed distance/on-target/rot-toward
-#	property for fixed look-at reticule distance from abilityController
-
 ##############################################################################
 
 # properties (signals, enums, constants, exports, variables, onreadys)
