@@ -67,8 +67,8 @@ const DEBUG_ITEM_VALUE_MIN_SIZE_FRACTIONAL = 0.04
 var debug_item_container_node_refs = {}
 
 # these are node paths to the major nodes in the debug info overlay scene
-onready var debug_edge_margin_node: MarginContainer =\
-		$Margin
+#onready var debug_edge_margin_node: MarginContainer =\
+#		$Margin
 onready var debug_info_column_node: VBoxContainer =\
 		$Margin/InfoColumn
 onready var debug_item_container_default_node: HBoxContainer =\
