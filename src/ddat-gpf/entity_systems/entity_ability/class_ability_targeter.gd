@@ -44,10 +44,10 @@ enum RETURN_TYPE {
 # SELECTION_NODE should be used by abilities that wish to affect, or target
 # toward the position (or direction), a specific game entity
 # NONE - no node reference is tracked, current_target will always be null
-# CUSTOM_METHOD - the selector_method is used to get a node reference
+# SELECTOR_METHOD - the selector_method is used to get a node reference
 enum SELECTION_NODE {
 	NONE,
-	CUSTOM_METHOD,
+	SELECTOR_METHOD,
 	}
 # 'SELECTION_POSITION' is how a targeter chooses a position to target an
 # ability toward
@@ -55,13 +55,13 @@ enum SELECTION_NODE {
 # a specific location or direction relative to the ability owner
 # NONE - no node reference is tracked, current_target_position is always null
 # MOUSE_LOOK - tracks the global_position of the mouse cursor
-# CUSTOM_METHOD - the selector_method is used to get a vector2 position
+# SELECTOR_METHOD - the selector_method is used to get a vector2 position
 #	(if the method returns a node reference, the global_position of that
 #	node will be used as the position output)
 enum SELECTION_POSITION {
 	NONE,
 	MOUSE_LOOK,
-	CUSTOM_METHOD,
+	SELECTOR_METHOD,
 	}
 
 #//TODO
@@ -90,11 +90,36 @@ enum RETICULE {
 const CLASS_VERBOSE_LOGGING := false
 const CLASS_SCRIPT_NAME := "ActivationController"
 
-# toggles for which properties you wish the targeter to output by signal
-# 'output_target_reference' -> emit signal 'update_target_reference'
+# if unset prevents the node reference target from being passed along
+# i.e. disables the signal 'update_target_reference'
 export(bool) var output_target_reference := true
-# 'output_target_position' -> emit signal 'update_target_position'
+
+# the target selection mode for direct node targeting
+# see the SELECTION_NODE enum for more details
+export(SELECTION_NODE) var target_node_selection := SELECTION_NODE.NONE
+
+# if unset prevents the position target from being passed along
+# i.e. disables the signal 'update_target_position'
 export(bool) var output_target_position := true
+
+# the target selection mode for positional targeting
+# see the SELECTION_POSITION enum for more details
+export(SELECTION_POSITION) var target_position_selection := SELECTION_POSITION.NONE
+
+# the method name of any custom selector method written in an extended
+# targeter class; defaults to the sample 'get_closest_target' method included
+# the return value of the specified method determines the targeter output
+# [to get position]
+# if the custom selector method returns a vector2 value, it can be used to
+# set 'current_target_position' if 'target_position_selection' is set to
+# 'SELECTION_POSITION.SELECTOR_METHOD'
+# [to get node reference]
+# if the custom selector method returns a node reference value, it can be used
+# to both set 'current_target' and 'current_target_position', as long as
+# 'target_node_selection' is set to 'SELECTION_NODE.SELECTOR_METHOD'
+# (in the latter case the node reference's global_position property will be
+# set to the current_target_position property)
+export(String) var selector_method := "get_closest_target"
 
 # for selector methods that wish use a node group to select their targets
 # if utilising, remember to assign enemies to the group
@@ -106,23 +131,6 @@ export(bool) var output_target_position := true
 # and the selector method frequently searches the group) have the potential
 # for lag
 export(String) var target_groupstring := "groupstring_enemy"
-
-# the target selection mode for nodes
-# see the SELECTION_NODE enum for more details
-export(SELECTION_NODE) var target_node_selection := SELECTION_NODE.NONE
-# the target selection mode for nodes
-# see the SELECTION_POSITION enum for more details
-export(SELECTION_POSITION) var target_position_selection := SELECTION_POSITION.NONE
-
-# the method name of any custom selector method written in an extended
-# targeter class; defaults to the sample 'get_closest_target' method included
-# if the custom selector method returns a vector2 value, it can only be used
-# if target_position_selection is set to SELECTION_POSITION.CUSTOM_METHOD
-# if the custom selector method returns a node reference value, it can be used
-# for the above and if target_node_selection is set to SELECTION_NODE.CUSTOM_METHOD
-# (the node reference's global_position will be used as the targeter's
-# current_target_position property)
-export(String) var selector_method := "get_closest_target"
 
 # how many frames between updating target
 # this is not how frequently the target collects data about their target or
@@ -220,8 +228,8 @@ func _process(arg_delta):
 		var selector_method_output = _process_selector_method()
 		# passed to the target reference and target position processing,
 		# is only relevant if one the following is true:
-		# (target_node_selection == SELECTION_REFERENCE.CUSTOM_METHOD)
-		# (target_position_selection == SELECTION_POSITION.CUSTOM_METHOD)
+		# (target_node_selection == SELECTION_REFERENCE.SELECTOR_METHOD)
+		# (target_position_selection == SELECTION_POSITION.SELECTOR_METHOD)
 		# prevents calculating the selector method twice
 		_process_current_target_reference(selector_method_output)
 		_process_current_target_position(selector_method_output)
@@ -265,19 +273,19 @@ func _process_selector_method():
 
 
 # if the selector method doesn't return a node2d, but target_node_selection is
-# set to SELECTION_NODE.CUSTOM_METHOD, current_target will be set to null
+# set to SELECTION_NODE.SELECTOR_METHOD, current_target will be set to null
 func _process_current_target_reference(arg_selector_output):
 	# see SELECTION_NODE enum for more detail
 	match target_node_selection:
 		SELECTION_NODE.NONE:
 			current_target = null
-		SELECTION_NODE.CUSTOM_METHOD:
+		SELECTION_NODE.SELECTOR_METHOD:
 			if arg_selector_output is Node2D:
 				_set_new_current_target(arg_selector_output)
 			else:
 				current_target = null
 
-# if target_position_selection is set to SELECTION_POSITION.CUSTOM_METHOD and the
+# if target_position_selection is set to SELECTION_POSITION.SELECTOR_METHOD and the
 # selector_method doesn't return a node2d or vector2, the property
 # 'current_target_position' will be set null
 # if the selector_method instead returns a node2d the current_target_position
@@ -289,7 +297,7 @@ func _process_current_target_position(arg_selector_output):
 			current_target_position = null
 		SELECTION_POSITION.MOUSE_LOOK:
 			current_target_position = get_global_mouse_position()
-		SELECTION_POSITION.CUSTOM_METHOD:
+		SELECTION_POSITION.SELECTOR_METHOD:
 			if arg_selector_output is Node2D:
 				current_target_position = arg_selector_output.global_position
 			elif arg_selector_output is Vector2:
