@@ -106,6 +106,13 @@ export(String) var selector_method := "_get_nearest"
 # and writing their own selector methods.
 export(RETURN_TYPE) var selector_returns := RETURN_TYPE.NODE_REFERENCE
 
+# how many frames between calling selection method
+# how frequently the targeter attempts to check if there's a better target
+# defaults to nil (every _process cycle) - this can be demanding if the
+# selection mode is set to a complex selector method, so you can increase
+# this frequency to alleviate potential lag
+export(float, 0.0, 2.0) var selection_frequency := 0.0
+
 # how many frames between updating target
 # this is not how frequently the target collects data about their target or
 # who to target, but rather how often they pass that data along
@@ -123,6 +130,8 @@ export(NodePath) var path_to_reticule_sprite
 # only applies if reticule mode is set to RETICULE.SHOW_ON_ACTIVATION
 export(float, 0.0, 60.0) var show_reticule_duration := 0.4
 
+# delta accumulation since last selector check
+var frames_since_last_target_check := 0.0
 # delta accumulation since last signal update
 var frames_since_last_update := 0.0
 
@@ -187,15 +196,30 @@ func _ready():
 
 # delta is time since last frame
 func _process(arg_delta):
-	# internal updates process as frequently as possible
-	_process_internal_target_data()
-	# external updates (output) have a forced delay or lag
-	# set the 'update_frequency' property to nil to disable this
-	frames_since_last_update += arg_delta
-	if frames_since_last_update >= update_frequency:
-		frames_since_last_update -= update_frequency
+	# for selection to go ahead the frequency must be nil or enough
+	# frame time between selections (in delta accumulation) must have passed
+	var selection_allowed := (selection_frequency == 0.0)
+	if not selection_allowed:
+		frames_since_last_target_check += arg_delta
+		if frames_since_last_target_check >= selection_frequency:
+			frames_since_last_target_check -= selection_frequency
+			selection_allowed = true
+	if selection_allowed:
+		# internal updates process much faster than updates
+		_process_internal_target_data()
+	
+	# as above except checking the update frequency instead of selection
+	var update_allowed := (update_frequency == 0.0)
+	if not update_allowed:
+		# external updates (output) have a forced delay or lag
+		# set the 'update_frequency' property to nil to disable this
+		frames_since_last_update += arg_delta
+		if frames_since_last_update >= update_frequency:
+			frames_since_last_update -= update_frequency
+			update_allowed = true
+	if update_allowed:
 		_process_output_target_data()
-		
+	
 	# if update doesn't happen this frame, pass along how long it will be
 	# until the next target update (this is useful for ui elements)
 	else:
@@ -224,6 +248,8 @@ func _process_internal_target_data():
 	match selection_mode:
 		# get mouse pos
 		# mouse look cannot return node references
+		# mouse look is a lightweight selection method and can be called
+		# every _process loop
 		SELECTION.MOUSE_LOOK:
 #			potential_target_position = get_local_mouse_position()
 			current_target_position = get_global_mouse_position()
@@ -233,6 +259,9 @@ func _process_internal_target_data():
 		# warning: if the selector method does not return the expected type
 		# it will unset the current target and/or current target position by
 		# setting the property/properties to null
+		# selector methods can be intensive to call every _process loop and
+		# developers are encouraged to consider increasing the
+		# 'selection_frequency' property if they encounter any lag
 		SELECTION.SELECTOR_METHOD:
 			if selector_method != null:
 				if has_method(selector_method):
