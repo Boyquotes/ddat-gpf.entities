@@ -94,6 +94,14 @@ export(SELECTION) var selection_mode
 
 export(String) var selector_method := "_get_nearest"
 
+# selector methods can be written to support node reference return (preferred)
+# or global position return, but which they return must be set in this export
+# note: returning node reference also allows output of global position, but
+# returning global position does not allow output of node reference. This
+# property exists to give devs leeway when extending the targeter class
+# and writing their own selector methods.
+export(RETURN_TYPE) var selector_returns := RETURN_TYPE.NODE_REFERENCE
+
 # how many frames between updating target
 # lower values may cause lag with large numbers of entityAbilityTargeters
 export(float, 0.0, 10.0) var update_frequency := 0.5
@@ -269,6 +277,7 @@ func get_target_data_by_selection(arg_return_type: int):
 				"return type argument invalid")
 	
 	# selection mode determines available return types
+	# set selection mode to SELECTION.NONE to disable targeter
 	match selection_mode:
 		# get mouse pos
 		# mouse look cannot return node references
@@ -277,14 +286,18 @@ func get_target_data_by_selection(arg_return_type: int):
 			potential_target_position = get_global_mouse_position()
 		
 		# by custom method
-		# methods written for this selection type should always return
-		# node references; position can be taken from there.
-		#//TODO add option for selector method to support position only
-		# from the node reference
+		# selector methods can return node ref or global position
 		SELECTION.SELECTOR_METHOD:
 			if selector_method != null:
 				if has_method(selector_method):
-					potential_target = call(selector_method)
+					# 'selector returns' export allows for specifying the
+					# return value of the selector method
+					# if the chosen method does not return the specified type,
+					# the target ref or position will be null
+					if selector_returns == RETURN_TYPE.NODE_REFERENCE:
+						potential_target = call(selector_method)
+					if selector_returns == RETURN_TYPE.GLOBAL_POSITION:
+						potential_target_position = call(selector_method)
 	
 	# if potential target is null, cannot return a node ref even if asked for
 	if potential_target is Node2D:
