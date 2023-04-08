@@ -142,7 +142,7 @@ var showing_reticule_after_activation := false
 var frames_since_reticule_shown := 0.0
 
 # reference to targeting reticule sprite, if unset will disable any reticule
-# based methods such as _change_targeting_reticule_visibility
+# based methods such as _set_reticule_visibility
 var targeting_reticule_node: Sprite = null
 
 # property set when reticule signals and parent exit condition are connected,
@@ -168,10 +168,10 @@ func _enter_tree():
 	if parent_node is ActivationController:
 		signal_connection_state_1 = GlobalFunc.confirm_signal(\
 				true, parent_node, self,
-				"activate_ability", "_show_reticule_on_activation")
+				"activate_ability", "_on_activation_show_reticule")
 		signal_connection_state_2 = GlobalFunc.confirm_signal(\
 				true, parent_node, self,
-				"input_confirming", "_show_reticule_on_targeting")
+				"input_confirming", "_on_targeting_set_reticule")
 	is_reticule_setup =\
 			(signal_connection_state_1 and signal_connection_state_2)
 
@@ -182,7 +182,7 @@ func _ready():
 	#
 	# reticule handling
 	self.reticule_mode = reticule_mode
-	_attempt_to_set_targeting_reticule()
+	_setup_visibility()
 
 
 # delta is time since last frame
@@ -212,7 +212,7 @@ func _process(arg_delta):
 		if frames_since_reticule_shown >= show_reticule_duration:
 			frames_since_reticule_shown = 0.0
 			showing_reticule_after_activation = false
-			_change_targeting_reticule_visibility(false)
+			_set_reticule_visibility(false)
 
 
 # this method uses the target selection mode to update the current_target
@@ -299,38 +299,6 @@ func get_target_group() -> Array:
 # private methods
 
 
-# attempt to establish the targeting reticule sprite
-func _attempt_to_set_targeting_reticule():
-	# ERR checking
-	if path_to_reticule_sprite == null:
-		return
-	var get_potential_reticule = get_node_or_null(path_to_reticule_sprite)
-	if get_potential_reticule == null:
-		reticule_mode = RETICULE.DO_NOT_SHOW
-		if CLASS_VERBOSE_LOGGING:
-			GlobalDebug.log_error(CLASS_SCRIPT_NAME, "path_to_reticule_sprite",
-					"reticule sprite path invalid")
-		return
-	if get_potential_reticule is Sprite:
-		targeting_reticule_node = get_potential_reticule
-		if reticule_mode == RETICULE.SHOW_IMMEDIATELY:
-			_change_targeting_reticule_visibility(true)
-		elif reticule_mode == RETICULE.DO_NOT_SHOW:
-			_change_targeting_reticule_visibility(false)
-
-
-# some targeting styles need reticule preconfiguration
-# maybe change to setter?
-func _change_targeting_reticule_visibility(arg_show: bool = false):
-	# setup failure, this will be false if parent didn't accept signal
-	# connections on targeter enter_tree, or parent wasn't activationController
-	if not is_reticule_setup:
-		return
-	if targeting_reticule_node != null:
-		targeting_reticule_node.visible = arg_show
-		emit_signal("change_reticule_visibility", arg_show)
-
-
 # sample valid method for SELECTION.AUTOMATIC
 # compares global_positions of node2D within the target_groupstring to find
 # the closest to the abilityTargeter. In order for the abilityTargeter to
@@ -372,23 +340,6 @@ func _get_nearest():
 	return closest_target
 
 
-func _show_reticule_on_activation():
-	GlobalDebug.log_success(CLASS_VERBOSE_LOGGING, CLASS_SCRIPT_NAME,
-			"_show_reticule_on_activation", "signal received")
-	if reticule_mode == RETICULE.SHOW_ON_ACTIVATION:
-		frames_since_reticule_shown = 0.0
-		_change_targeting_reticule_visibility(true)
-		showing_reticule_after_activation = true
-
-
-# activation controller INPUT_CONFIRMED_PRESS or INPUT_CONFIRMED_HOLD
-func _show_reticule_on_targeting(target_state: bool):
-	GlobalDebug.log_success(CLASS_VERBOSE_LOGGING, CLASS_SCRIPT_NAME,
-			"_show_reticule_on_targeting", "signal received")
-	if reticule_mode == RETICULE.SHOW_ON_TARGETING:
-		_change_targeting_reticule_visibility(target_state)
-
-
 # removes the current target reference on target exiting tree, to prevent
 # a potential null reference error when getting target properties
 func _target_clear(arg_target):
@@ -428,4 +379,59 @@ func _target_reference_update(
 					"unable to remove signals to existing target")
 		# clear target
 		current_target = null
+
+
+# some targeting styles need reticule preconfiguration
+# maybe change to setter?
+func _set_reticule_visibility(arg_show: bool = false):
+	# setup failure, this will be false if parent didn't accept signal
+	# connections on targeter enter_tree, or parent wasn't activationController
+	if not is_reticule_setup:
+		return
+	if targeting_reticule_node != null:
+		targeting_reticule_node.visible = arg_show
+		emit_signal("change_reticule_visibility", arg_show)
+
+
+# attempt to establish the targeting reticule sprite
+func _setup_visibility():
+	# ERR checking
+	if path_to_reticule_sprite == null:
+		return
+	var get_potential_reticule = get_node_or_null(path_to_reticule_sprite)
+	if get_potential_reticule == null:
+		reticule_mode = RETICULE.DO_NOT_SHOW
+		if CLASS_VERBOSE_LOGGING:
+			GlobalDebug.log_error(CLASS_SCRIPT_NAME, "path_to_reticule_sprite",
+					"reticule sprite path invalid")
+		return
+	if get_potential_reticule is Sprite:
+		targeting_reticule_node = get_potential_reticule
+		if reticule_mode == RETICULE.SHOW_IMMEDIATELY:
+			_set_reticule_visibility(true)
+		elif reticule_mode == RETICULE.DO_NOT_SHOW:
+			_set_reticule_visibility(false)
+
+
+
+##############################################################################
+
+# private methods on signal receipt
+
+
+func _on_activation_show_reticule():
+	GlobalDebug.log_success(CLASS_VERBOSE_LOGGING, CLASS_SCRIPT_NAME,
+			"_on_activation_show_reticule", "signal received")
+	if reticule_mode == RETICULE.SHOW_ON_ACTIVATION:
+		frames_since_reticule_shown = 0.0
+		_set_reticule_visibility(true)
+		showing_reticule_after_activation = true
+
+
+# activation controller INPUT_CONFIRMED_PRESS or INPUT_CONFIRMED_HOLD
+func _on_targeting_set_reticule(target_state: bool):
+	GlobalDebug.log_success(CLASS_VERBOSE_LOGGING, CLASS_SCRIPT_NAME,
+			"_on_targeting_set_reticule", "signal received")
+	if reticule_mode == RETICULE.SHOW_ON_TARGETING:
+		_set_reticule_visibility(target_state)
 
