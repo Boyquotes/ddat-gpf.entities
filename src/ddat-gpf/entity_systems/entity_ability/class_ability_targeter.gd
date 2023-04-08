@@ -74,7 +74,7 @@ enum RETICULE {
 const CLASS_VERBOSE_LOGGING := false
 const CLASS_SCRIPT_NAME := "ActivationController"
 
-# toggles for which signals you wish to output
+# toggles for which properties you wish the targeter to output by signal
 # 'output_target_reference' -> emit signal 'update_target_reference'
 export(bool) var output_target_reference := true
 # 'output_target_position' -> emit signal 'update_target_position'
@@ -207,41 +207,15 @@ func _ready():
 
 # delta is time since last frame
 func _process(arg_delta):
+	# internal updates process as frequently as possible
+	_process_internal_target_data()
+	# external updates (output) have a forced delay or lag
+	# set the 'update_frequency' property to nil to disable this
 	frames_since_last_update += arg_delta
 	if frames_since_last_update >= update_frequency:
 		frames_since_last_update -= update_frequency
+		_process_output_target_data()
 		
-		# multiple output methods exist, even though a node reference is
-		# enough to get position, because certain abilities may just wish
-		# to send an ability toward a position or in a specific direction
-		
-		# reference to target handling
-		if output_target_reference:
-			current_target =\
-					get_target_data_by_selection(RETURN_TYPE.NODE_REFERENCE)
-			if current_target != null:
-				emit_signal("update_target_reference", current_target)
-		
-		# position of target handling
-		if output_target_position:
-			if current_target is Node2D:
-				current_target_position = current_target.global_position
-			else:
-				current_target_position =\
-						get_target_data_by_selection(
-						RETURN_TYPE.GLOBAL_POSITION)
-			if current_target_position != null:
-				emit_signal("update_target_position", current_target_position)
-		
-		current_target_position =\
-				get_target_data_by_selection(RETURN_TYPE.GLOBAL_POSITION)
-		# if target was found, update all
-		# can assume in receipient nodes that this passed param is vec2
-		if current_target_position != null\
-		and output_target_position:
-			# if it isn't null should only ever pass a vec2
-			assert(current_target_position is Vector2)
-			emit_signal("update_target_position", current_target_position)
 	# if update doesn't happen this frame, pass along how long it will be
 	# until the next target update (this is useful for ui elements)
 	else:
@@ -261,21 +235,10 @@ func _process(arg_delta):
 			_change_targeting_reticule_visibility(false)
 
 
-##############################################################################
-
-# public methods
-
-
-func get_target_data_by_selection(arg_return_type: int):
-	var potential_target = null
-	var potential_target_position = null
-	
-	# ERR catch
-	if not arg_return_type in RETURN_TYPE.values():
-		GlobalDebug.log_error(CLASS_SCRIPT_NAME,
-				"get_target_data_by_selection",
-				"return type argument invalid")
-	
+# this method uses the target selection mode to update the current_target
+# and current_target_position properties
+# the targeter tracks this data even when not outputting it
+func _process_internal_target_data():
 	# selection mode determines available return types
 	# set selection mode to SELECTION.NONE to disable targeter
 	match selection_mode:
@@ -283,39 +246,100 @@ func get_target_data_by_selection(arg_return_type: int):
 		# mouse look cannot return node references
 		SELECTION.MOUSE_LOOK:
 #			potential_target_position = get_local_mouse_position()
-			potential_target_position = get_global_mouse_position()
+			current_target_position = get_global_mouse_position()
 		
 		# by custom method
 		# selector methods can return node ref or global position
+		# warning: if the selector method does not return the expected type
+		# it will unset the current target and/or current target position by
+		# setting the property/properties to null
 		SELECTION.SELECTOR_METHOD:
 			if selector_method != null:
 				if has_method(selector_method):
 					# 'selector returns' export allows for specifying the
 					# return value of the selector method
-					# if the chosen method does not return the specified type,
-					# the target ref or position will be null
 					if selector_returns == RETURN_TYPE.NODE_REFERENCE:
-						potential_target = call(selector_method)
+						current_target = call(selector_method)
 					if selector_returns == RETURN_TYPE.GLOBAL_POSITION:
-						potential_target_position = call(selector_method)
-	
-	# if potential target is null, cannot return a node ref even if asked for
-	if potential_target is Node2D:
-		if arg_return_type == RETURN_TYPE.NODE_REFERENCE:
-				return potential_target
-		# if not returning node reference we are returning position
-		else:
-			potential_target_position = potential_target.global_position
-	
-	# if no potential target is set (such as in the case of mouse look
-	# selection) then the potential_target_position is set elsewhere
-	if potential_target_position is Vector2:
-		if arg_return_type == RETURN_TYPE.GLOBAL_POSITION:
-				return potential_target_position
-	
-	# if no valid output then
-	# catchall end statement
-	return null
+						current_target_position = call(selector_method)
+
+
+# method to handle signals that pass along target properties, based on the
+# export selections made on the targeter
+func _process_output_target_data():
+	# multiple output methods exist, even though a node reference is enough to get
+	# get all properties, because certain selector methods may collect less data
+	# about a potential target and certain abilities may only require a position
+	# or specific direction to activate. It is up to the developer to determine
+	# the needs of each ability they design.
+	if output_target_reference:
+		if current_target != null:
+				emit_signal("update_target_reference", current_target)
+		
+	# if a target reference is set it will override position-only values
+	# to use the global_position property of the target reference
+	if output_target_position:
+		if current_target is Node2D:
+			current_target_position = current_target.global_position
+		if current_target_position != null:
+			emit_signal("update_target_position", current_target_position)
+
+
+##############################################################################
+
+# public methods
+
+#
+#func get_target_data_by_selection(arg_return_type: int):
+#	var potential_target = null
+#	var potential_target_position = null
+#
+#	# ERR catch
+#	if not arg_return_type in RETURN_TYPE.values():
+#		GlobalDebug.log_error(CLASS_SCRIPT_NAME,
+#				"get_target_data_by_selection",
+#				"return type argument invalid")
+#
+#	# selection mode determines available return types
+#	# set selection mode to SELECTION.NONE to disable targeter
+#	match selection_mode:
+#		# get mouse pos
+#		# mouse look cannot return node references
+#		SELECTION.MOUSE_LOOK:
+##			potential_target_position = get_local_mouse_position()
+#			potential_target_position = get_global_mouse_position()
+#
+#		# by custom method
+#		# selector methods can return node ref or global position
+#		SELECTION.SELECTOR_METHOD:
+#			if selector_method != null:
+#				if has_method(selector_method):
+#					# 'selector returns' export allows for specifying the
+#					# return value of the selector method
+#					# if the chosen method does not return the specified type,
+#					# the target ref or position will be null
+#					if selector_returns == RETURN_TYPE.NODE_REFERENCE:
+#						potential_target = call(selector_method)
+#					if selector_returns == RETURN_TYPE.GLOBAL_POSITION:
+#						potential_target_position = call(selector_method)
+#
+#	# if potential target is null, cannot return a node ref even if asked for
+#	if potential_target is Node2D:
+#		if arg_return_type == RETURN_TYPE.NODE_REFERENCE:
+#				return potential_target
+#		# if not returning node reference we are returning position
+#		else:
+#			potential_target_position = potential_target.global_position
+#
+#	# if no potential target is set (such as in the case of mouse look
+#	# selection) then the potential_target_position is set elsewhere
+#	if potential_target_position is Vector2:
+#		if arg_return_type == RETURN_TYPE.GLOBAL_POSITION:
+#				return potential_target_position
+#
+#	# if no valid output then
+#	# catchall end statement
+#	return null
 
 
 ##############################################################################
