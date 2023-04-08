@@ -272,7 +272,28 @@ func _process_output_target_data():
 # public methods
 
 
-#
+# by default this is equivalent to get_nodes_in_group(target_groupstring),
+# however certain targeting options allow discounting specific targets that
+# would otherwise be considered (such as within a specific proximity) and
+# pruning the target group for these now-invalid targets
+func get_target_group() -> Array:
+	var potential_targets := []
+	if target_groupstring != "":
+		potential_targets = get_tree().get_nodes_in_group(target_groupstring)
+	
+	# developers can shadow this method in extended targeters to modify how
+	# these groups are passed along. Shadow the method (example below) but
+	# call the shadowed method as the first operation to get the group as-is.
+	# e.g.
+	#	func get_target_group() -> Array:
+	#		# get contents of parent method
+	#		var potential_targets = .get_target_group()
+	#		# do own stuff to group
+	
+	#//TODO
+	# future exclusionary or pruning behaviour can be written here
+	
+	return potential_targets
 
 
 ##############################################################################
@@ -319,7 +340,7 @@ func _change_targeting_reticule_visibility(arg_show: bool = false):
 # method returns a node2D or node2D extended node if it finds a target
 # method returns null if no valid target
 func _get_nearest():
-	var get_target_group = get_tree().get_nodes_in_group(target_groupstring)
+	var get_target_group = get_target_group()
 	if get_target_group.empty():
 		return null
 	# if target group exists, check distances
