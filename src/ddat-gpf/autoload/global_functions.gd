@@ -54,3 +54,17 @@ func confirm_signal(
 		
 	return signal_return_state
 
+# DOES NOT WORK AS INTENDED - you cannot pass a reference to a freed node
+# in order to create a weak reference from
+# you would have to create a weak reference to pass to the autoload, at which
+# point you're not saving any time or readability when you could just
+# directly call the .get_ref() method on that weakref then and there
+#
+# ORIGINAL
+## returns whether or not an object has been previously freed
+## this is a failsafe if it is impossible to be sure whether an object has
+## been deleted or not
+## (utilising object pooling behaviour is preferred practice within ddat-gpf)
+#func object_is_valid(arg_object: Object) -> bool:
+#	return weakref(arg_object).get_ref()
+
