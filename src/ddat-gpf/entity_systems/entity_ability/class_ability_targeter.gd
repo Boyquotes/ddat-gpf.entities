@@ -241,7 +241,7 @@ func _process(arg_delta):
 		and output_target_position:
 			# if it isn't null should only ever pass a vec2
 			assert(current_target_position is Vector2)
-			emit_signal("update_target", current_target_position)
+			emit_signal("update_target_position", current_target_position)
 	# if update doesn't happen this frame, pass along how long it will be
 	# until the next target update (this is useful for ui elements)
 	else:
