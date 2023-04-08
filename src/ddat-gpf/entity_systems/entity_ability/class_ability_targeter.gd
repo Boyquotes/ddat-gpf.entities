@@ -31,26 +31,42 @@ signal update_not_ready(frames_left, proportion_to)
 # for when to show the reticule
 signal change_reticule_visibility(is_visible)
 
+#//TODO - is this unused now?
 # the target data to gather and update
 enum RETURN_TYPE {
 	NODE_REFERENCE,
 	GLOBAL_POSITION,
 }
 
-# the selection values are used by the selection method property to determine
-# what properties the targeter tracks in a potential target, and how it
-# gets those properties.
-# by default,
-# NONE - tracks no properties
+# targeters can output different target properties
+# the selection enums determine how, if at all, the targeter finds a property
+# 'SELECTION_NODE' is how a targeter chooses a target (a node reference)
+# SELECTION_NODE should be used by abilities that wish to affect, or target
+# toward the position (or direction), a specific game entity
+# NONE - no node reference is tracked, current_target will always be null
+# CUSTOM_METHOD - the selector_method is used to get a node reference
+enum SELECTION_NODE {
+	NONE,
+	CUSTOM_METHOD,
+	}
+# 'SELECTION_POSITION' is how a targeter chooses a position to target an
+# ability toward
+# SELECTION_POSITION should be used by abilities that just wish to target
+# a specific location or direction relative to the ability owner
+# NONE - no node reference is tracked, current_target_position is always null
 # MOUSE_LOOK - tracks the global_position of the mouse cursor
-# SELECTOR_METHOD - tracks either node reference or global_position, according
-#	to a custom method specified under the selector_method property (see that
-#	property for a more detailed explanation)
-enum SELECTION {
+# CUSTOM_METHOD - the selector_method is used to get a vector2 position
+#	(if the method returns a node reference, the global_position of that
+#	node will be used as the position output)
+enum SELECTION_POSITION {
 	NONE,
 	MOUSE_LOOK,
-	SELECTOR_METHOD,
+	CUSTOM_METHOD,
 	}
+
+#//TODO
+#replace SELECTION
+#replace SELECTOR_METHOD,
 
 # when to show the ability's relevant targeting reticule
 # SHOW_IMMEDIATELY - targeter sets reticule visible then never adjusts it
@@ -91,27 +107,22 @@ export(bool) var output_target_position := true
 # for lag
 export(String) var target_groupstring := "groupstring_enemy"
 
-# the target selection mode, see the SELECTION enum for more details
-export(SELECTION) var selection_mode := SELECTION.NONE
+# the target selection mode for nodes
+# see the SELECTION_NODE enum for more details
+export(SELECTION_NODE) var target_node_selection := SELECTION_NODE.NONE
+# the target selection mode for nodes
+# see the SELECTION_POSITION enum for more details
+export(SELECTION_POSITION) var target_position_selection := SELECTION_POSITION.NONE
 
 # the method name of any custom selector method written in an extended
 # targeter class; defaults to the sample '_get_nearest' method included
+# if the custom selector method returns a vector2 value, it can only be used
+# if target_position_selection is set to SELECTION_POSITION.CUSTOM_METHOD
+# if the custom selector method returns a node reference value, it can be used
+# for the above and if target_node_selection is set to SELECTION_NODE.CUSTOM_METHOD
+# (the node reference's global_position will be used as the targeter's
+# current_target_position property)
 export(String) var selector_method := "_get_nearest"
-
-# selector methods can be written to support node reference return (preferred)
-# or global position return, but which they return must be set in this export
-# note: returning node reference also allows output of global position, but
-# returning global position does not allow output of node reference. This
-# property exists to give devs leeway when extending the targeter class
-# and writing their own selector methods.
-export(RETURN_TYPE) var selector_returns := RETURN_TYPE.NODE_REFERENCE
-
-# how many frames between calling selection method
-# how frequently the targeter attempts to check if there's a better target
-# defaults to nil (every _process cycle) - this can be demanding if the
-# selection mode is set to a complex selector method, so you can increase
-# this frequency to alleviate potential lag
-export(float, 0.0, 2.0) var selection_frequency := 0.0
 
 # how many frames between updating target
 # this is not how frequently the target collects data about their target or
@@ -130,8 +141,6 @@ export(NodePath) var path_to_reticule_sprite
 # only applies if reticule mode is set to RETICULE.SHOW_ON_ACTIVATION
 export(float, 0.0, 60.0) var show_reticule_duration := 0.4
 
-# delta accumulation since last selector check
-var frames_since_last_target_check := 0.0
 # delta accumulation since last signal update
 var frames_since_last_update := 0.0
 
@@ -185,30 +194,17 @@ func _enter_tree():
 			(signal_connection_state_1 and signal_connection_state_2)
 
 
-# call setters and getters
+# called on node entering the tree for the first time only
 func _ready():
-	self.selection_mode = selection_mode
-	#
 	# reticule handling
-	self.reticule_mode = reticule_mode
 	_setup_visibility()
 
 
 # delta is time since last frame
 func _process(arg_delta):
-	# for selection to go ahead the frequency must be nil or enough
-	# frame time between selections (in delta accumulation) must have passed
-	var selection_allowed := (selection_frequency == 0.0)
-	if not selection_allowed:
-		frames_since_last_target_check += arg_delta
-		if frames_since_last_target_check >= selection_frequency:
-			frames_since_last_target_check -= selection_frequency
-			selection_allowed = true
-	if selection_allowed:
-		# internal updates process much faster than updates
-		_process_internal_target_data()
-	
-	# as above except checking the update frequency instead of selection
+	# for an update to go ahead the frequency must be nil or enough time
+	# must have passed (accumulated delta) to exceed the update frequency
+	# (update frequency is measured in frames)
 	var update_allowed := (update_frequency == 0.0)
 	if not update_allowed:
 		# external updates (output) have a forced delay or lag
@@ -217,7 +213,19 @@ func _process(arg_delta):
 		if frames_since_last_update >= update_frequency:
 			frames_since_last_update -= update_frequency
 			update_allowed = true
+#//TODO add separate target and position update check timers
+# (so target can be set and then position gotten frequently)
 	if update_allowed:
+		# check the selector method, if specified
+		var selector_method_output = _process_selector_method()
+		# passed to the target reference and target position processing,
+		# is only relevant if one the following is true:
+		# (target_node_selection == SELECTION_REFERENCE.CUSTOM_METHOD)
+		# (target_position_selection == SELECTION_POSITION.CUSTOM_METHOD)
+		# prevents calculating the selector method twice
+		_process_current_target_reference(selector_method_output)
+		_process_current_target_position(selector_method_output)
+#		_process_internal_target_data()
 		_process_output_target_data()
 	
 	# if update doesn't happen this frame, pass along how long it will be
@@ -239,39 +247,96 @@ func _process(arg_delta):
 			_set_reticule_visibility(false)
 
 
-# this method uses the target selection mode to update the current_target
-# and current_target_position properties
-# the targeter tracks this data even when not outputting it
-func _process_internal_target_data():
-	# selection mode determines available return types
-	# set selection mode to SELECTION.NONE to disable targeter
-	match selection_mode:
-		# get mouse pos
-		# mouse look cannot return node references
-		# mouse look is a lightweight selection method and can be called
-		# every _process loop
-		SELECTION.MOUSE_LOOK:
-#			potential_target_position = get_local_mouse_position()
-			current_target_position = get_global_mouse_position()
-		
-		# by custom method
-		# selector methods can return node ref or global position
-		# warning: if the selector method does not return the expected type
-		# it will unset the current target and/or current target position by
-		# setting the property/properties to null
-		# selector methods can be intensive to call every _process loop and
-		# developers are encouraged to consider increasing the
-		# 'selection_frequency' property if they encounter any lag
-		SELECTION.SELECTOR_METHOD:
-			if selector_method != null:
-				if has_method(selector_method):
-					# 'selector returns' export allows for specifying the
-					# return value of the selector method
-					if selector_returns == RETURN_TYPE.NODE_REFERENCE:
-						current_target = call(selector_method)
-					if selector_returns == RETURN_TYPE.GLOBAL_POSITION:
-						current_target_position = call(selector_method)
+# custom target selection methods can be added to extended targeter classes
+# and specified (method name as string) as part of the selector_method export
+# if the method is valid the output will be returned to the main _process
+# call and checked against process subfunctions for target reference and
+# position; the type will not be checked as part of the output of this method
+# (this method only calls the selector method and returns the result)
+func _process_selector_method():
+	var selector_return_value = null
+	# skip if selector method left unset
+	if selector_method != "":
+		# ERR check
+		if not has_method(selector_method):
+			GlobalDebug.log_error(CLASS_SCRIPT_NAME,
+					"_process_selector_method",
+					"invalid selector string provided, method not found")
+		if selector_method != null:
+			if has_method(selector_method):
+				selector_return_value = call(selector_method)
+	
+	# no type checking at return point, this could be null
+	return selector_return_value
 
+
+# if the selector method doesn't return a node2d, but target_node_selection is
+# set to SELECTION_NODE.CUSTOM_METHOD, current_target will be set to null
+func _process_current_target_reference(arg_selector_output):
+	# see SELECTION_NODE enum for more detail
+	match target_node_selection:
+		SELECTION_NODE.NONE:
+			current_target = null
+		SELECTION_NODE.CUSTOM_METHOD:
+			if arg_selector_output is Node2D:
+				current_target = arg_selector_output
+			else:
+				current_target = null
+
+# if target_position_selection is set to SELECTION_POSITION.CUSTOM_METHOD and the
+# selector_method doesn't return a node2d or vector2, the property
+# 'current_target_position' will be set null
+# if the selector_method instead returns a node2d the current_target_position
+# will be set to the global_position property of the returned node2d
+func _process_current_target_position(arg_selector_output):
+	# see SELECTION_POSITION enum for more detail
+	match target_position_selection:
+		SELECTION_POSITION.NONE:
+			current_target_position = null
+		SELECTION_POSITION.MOUSE_LOOK:
+			current_target_position = get_global_mouse_position()
+		SELECTION_POSITION.CUSTOM_METHOD:
+			if arg_selector_output is Node2D:
+				current_target_position = arg_selector_output.global_position
+			elif arg_selector_output is Vector2:
+				current_target_position = arg_selector_output
+			else:
+				current_target_position = null
+
+#
+## this method uses the target selection mode to update the current_target
+## and current_target_position properties
+## the targeter tracks this data even when not outputting it
+#func _process_internal_target_data():
+#	# selection mode determines available return types
+#	# set selection mode to SELECTION.NONE to disable targeter
+#	match selection_mode:
+#		# get mouse pos
+#		# mouse look cannot return node references
+#		# mouse look is a lightweight selection method and can be called
+#		# every _process loop
+#		SELECTION.MOUSE_LOOK:
+##			potential_target_position = get_local_mouse_position()
+#			current_target_position = get_global_mouse_position()
+#
+#		# by custom method
+#		# selector methods can return node ref or global position
+#		# warning: if the selector method does not return the expected type
+#		# it will unset the current target and/or current target position by
+#		# setting the property/properties to null
+#		# selector methods can be intensive to call every _process loop and
+#		# developers are encouraged to consider increasing the
+#		# 'selection_frequency' property if they encounter any lag
+#		SELECTION.SELECTOR_METHOD:
+#			if selector_method != null:
+#				if has_method(selector_method):
+#					# 'selector returns' export allows for specifying the
+#					# return value of the selector method
+#					if selector_returns == RETURN_TYPE.NODE_REFERENCE:
+#						current_target = call(selector_method)
+#					if selector_returns == RETURN_TYPE.GLOBAL_POSITION:
+#						current_target_position = call(selector_method)
+#
 
 # method to handle signals that pass along target properties, based on the
 # export selections made on the targeter
@@ -288,8 +353,6 @@ func _process_output_target_data():
 	# if a target reference is set it will override position-only values
 	# to use the global_position property of the target reference
 	if output_target_position:
-		if current_target is Node2D:
-			current_target_position = current_target.global_position
 		if current_target_position != null:
 			emit_signal("update_target_position", current_target_position)
 
