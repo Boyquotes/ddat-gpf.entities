@@ -389,7 +389,8 @@ func _show_reticule_on_targeting(target_state: bool):
 		_change_targeting_reticule_visibility(target_state)
 
 
-#//TODO test the tree exit connection
+# removes the current target reference on target exiting tree, to prevent
+# a potential null reference error when getting target properties
 func _target_clear(arg_target):
 	if arg_target is Node2D:
 		_target_reference_update(arg_target, true)

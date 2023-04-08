@@ -8,6 +8,7 @@
 
 [node name="EntityAbilityTargetTest" type="Node2D"]
 script = ExtResource( 2 )
+current_test_type = 1
 
 [node name="SampleTargetSprite" type="Sprite" parent="."]
 visible = false
@@ -71,6 +72,9 @@ rect_scale = Vector2( 2, 2 )
 text = "EnemyTest2"
 
 [node name="Tween" type="Tween" parent="."]
+
+[node name="DeleteTestTimer" type="Timer" parent="."]
+one_shot = true
 
 [connection signal="activate_ability" from="CenterOfScreen/ActivationController" to="." method="_on_ActivationController_activate_ability"]
 [connection signal="update_target_position" from="CenterOfScreen/ActivationController/EntityAbilityTargeter" to="." method="_on_EntityAbilityTargeter_update_target_position"]
