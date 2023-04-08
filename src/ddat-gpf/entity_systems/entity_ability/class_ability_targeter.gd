@@ -115,14 +115,14 @@ export(SELECTION_NODE) var target_node_selection := SELECTION_NODE.NONE
 export(SELECTION_POSITION) var target_position_selection := SELECTION_POSITION.NONE
 
 # the method name of any custom selector method written in an extended
-# targeter class; defaults to the sample '_get_nearest' method included
+# targeter class; defaults to the sample 'get_closest_target' method included
 # if the custom selector method returns a vector2 value, it can only be used
 # if target_position_selection is set to SELECTION_POSITION.CUSTOM_METHOD
 # if the custom selector method returns a node reference value, it can be used
 # for the above and if target_node_selection is set to SELECTION_NODE.CUSTOM_METHOD
 # (the node reference's global_position will be used as the targeter's
 # current_target_position property)
-export(String) var selector_method := "_get_nearest"
+export(String) var selector_method := "get_closest_target"
 
 # how many frames between updating target
 # this is not how frequently the target collects data about their target or
@@ -273,7 +273,7 @@ func _process_current_target_reference(arg_selector_output):
 			current_target = null
 		SELECTION_NODE.CUSTOM_METHOD:
 			if arg_selector_output is Node2D:
-				current_target = arg_selector_output
+				_set_new_current_target(arg_selector_output)
 			else:
 				current_target = null
 
@@ -367,43 +367,14 @@ func _process_reticule_handling(arg_delta):
 # public methods
 
 
-# by default this is equivalent to get_nodes_in_group(target_groupstring),
-# however certain targeting options allow discounting specific targets that
-# would otherwise be considered (such as within a specific proximity) and
-# pruning the target group for these now-invalid targets
-func get_target_group() -> Array:
-	var potential_targets := []
-	if target_groupstring != "":
-		potential_targets = get_tree().get_nodes_in_group(target_groupstring)
-	
-	# developers can shadow this method in extended targeters to modify how
-	# these groups are passed along. Shadow the method (example below) but
-	# call the shadowed method as the first operation to get the group as-is.
-	# e.g.
-	#	func get_target_group() -> Array:
-	#		# get contents of parent method
-	#		var potential_targets = .get_target_group()
-	#		# do own stuff to group
-	
-	#//TODO
-	# future exclusionary or pruning behaviour can be written here
-	
-	return potential_targets
-
-
-##############################################################################
-
-# private methods
-
-
-# sample valid method for SELECTION.AUTOMATIC
+# (the following method is included as an example selector method)
 # compares global_positions of node2D within the target_groupstring to find
 # the closest to the abilityTargeter. In order for the abilityTargeter to
 # accurately represent the position of the parent entity, make sure it is
 # a child node of the entity.
 # method returns a node2D or node2D extended node if it finds a target
 # method returns null if no valid target
-func _get_nearest():
+func get_closest_target():
 	var potential_target_group = get_target_group()
 	if potential_target_group.empty():
 		return null
@@ -437,17 +408,46 @@ func _get_nearest():
 	return closest_target
 
 
+# by default this is equivalent to get_nodes_in_group(target_groupstring),
+# however certain targeting options allow discounting specific targets that
+# would otherwise be considered (such as within a specific proximity) and
+# pruning the target group for these now-invalid targets
+func get_target_group() -> Array:
+	var potential_targets := []
+	if target_groupstring != "":
+		potential_targets = get_tree().get_nodes_in_group(target_groupstring)
+	
+	# developers can shadow this method in extended targeters to modify how
+	# these groups are passed along. Shadow the method (example below) but
+	# call the shadowed method as the first operation to get the group as-is.
+	# e.g.
+	#	func get_target_group() -> Array:
+	#		# get contents of parent method
+	#		var potential_targets = .get_target_group()
+	#		# do own stuff to group
+	
+	#//TODO
+	# future exclusionary or pruning behaviour can be written here
+	
+	return potential_targets
+
+
+##############################################################################
+
+# private methods
+
+
 # removes the current target reference on target exiting tree, to prevent
 # a potential null reference error when getting target properties
-func _target_clear(arg_target):
+func _clear_current_target(arg_target):
 	if arg_target is Node2D:
-		_target_reference_update(arg_target, true)
+		_set_new_current_target(arg_target, true)
 
 
 # if argument for is_cleared parameter is true, the current target will
 # be removed and signal connections updated; if left to default of false
 # this method will attempt to set the current target to the argument arg_target
-func _target_reference_update(
+func _set_new_current_target(
 			arg_target: Node2D,
 			arg_is_cleared: bool = false):
 	# attempt to add target
@@ -457,10 +457,10 @@ func _target_reference_update(
 			# connect target to target_clear method
 			# output error if signal doesn't exist and fails to be added
 			if (GlobalFunc.confirm_signal(false,
-					arg_target, self, "tree_exiting", "_target_clear",
+					arg_target, self, "tree_exiting", "_clear_current_target",
 					[arg_target]) == false):
 				GlobalDebug.log_error(CLASS_SCRIPT_NAME,
-						"_target_reference_update",
+						"_set_new_current_target",
 						"unable to remove signals to existing target")
 			else:
 				current_target = arg_target
@@ -469,10 +469,10 @@ func _target_reference_update(
 		# removed connection of target to target_clear method
 		# output error if signal exists and fails to be removed
 		if (GlobalFunc.confirm_signal(false,
-				arg_target, self, "tree_exiting", "_target_clear")\
+				arg_target, self, "tree_exiting", "_clear_current_target")\
 				== false):
 			GlobalDebug.log_error(CLASS_SCRIPT_NAME,
-					"_target_reference_update",
+					"_set_new_current_target",
 					"unable to remove signals to existing target")
 		# clear target
 		current_target = null
