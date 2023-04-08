@@ -62,7 +62,9 @@ func delete_random_enemy():
 		get_enemy.call_deferred("queue_free")
 
 
+# looping tween handling method for targeting tests
 func restart_tween_test():
+	# set movement start and finish
 	var test1 =\
 			[test1_positions[0], test1_positions[1]] if\
 			tween_reverse_state else\
@@ -71,18 +73,43 @@ func restart_tween_test():
 			[test2_positions[0], test2_positions[1]] if\
 			tween_reverse_state else\
 			[test2_positions[1], test2_positions[0]]
-	
+	#
 	tween_reverse_state = !tween_reverse_state
-	if enemy_test_1 != null:
+	#
+	# for enemy 1
+	if weakref(enemy_test_1).get_ref():
+		print("1 is valid ", weakref(enemy_test_1))
+	else:
+		print("1 is kill ", weakref(enemy_test_1))
+	# utilise weakref to confirm not previously freed (incase of delete test)
+	if weakref(enemy_test_1).get_ref():
+#	if GlobalFunc.object_is_valid(enemy_test_1):
+		# inside_tree will force an crash even in debug builds if node invalid
+#		assert(enemy_test_1.is_inside_tree())
+#		if not enemy_test_1.is_inside_tree():
+#			return
 		tween_node.interpolate_property(enemy_test_1,\
 				"global_position",
 				test1[0], test1[1],
 				3.0, Tween.TRANS_LINEAR, Tween.EASE_IN_OUT)
-	if enemy_test_2 != null:
+	#
+	# for enemy 2
+	if weakref(enemy_test_2).get_ref():
+		print("2 is valid ", weakref(enemy_test_2))
+	else:
+		print("2 is kill ", weakref(enemy_test_2))
+	# utilise weakref to confirm not previously freed (incase of delete test)
+	if weakref(enemy_test_2).get_ref():
+#	if GlobalFunc.object_is_valid(enemy_test_2):
+		# inside_tree will force an crash even in debug builds if node invalid
+#		assert(enemy_test_2.is_inside_tree())
+#		if not enemy_test_2.is_inside_tree():
+#			return
 		tween_node.interpolate_property(enemy_test_2,\
 				"global_position",
 				test2[0], test2[1],
 				1.4, Tween.TRANS_LINEAR, Tween.EASE_IN_OUT)
+	# run whatever tween remains
 	tween_node.start()
 
 
