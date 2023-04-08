@@ -178,24 +178,6 @@ func _enter_tree():
 			(signal_connection_state_1 and signal_connection_state_2)
 
 
-# auto connect reticule handling behaviours to parent activation controller
-# automatically disconnects reticule handling signals from the parent
-# disabled as should happen automatically when a node is removed
-#func _exit_tree():
-#	var parent_node = get_parent()
-#	var signal_connection_state_1 := false
-#	var signal_connection_state_2 := false
-#	if parent_node is ActivationController:
-#		signal_connection_state_1 = GlobalFunc.confirm_signal(\
-#				false, parent_node, self,
-#				"activate_ability", "_show_reticule_on_activation")
-#		signal_connection_state_2 = GlobalFunc.confirm_signal(\
-#				false, parent_node, self,
-#				"input_confirming", "_show_reticule_on_targeting")
-#	is_reticule_setup =\
-#			(signal_connection_state_1 and signal_connection_state_2)
-
-
 # call setters and getters
 func _ready():
 	self.selection_mode = selection_mode
@@ -289,57 +271,8 @@ func _process_output_target_data():
 
 # public methods
 
+
 #
-#func get_target_data_by_selection(arg_return_type: int):
-#	var potential_target = null
-#	var potential_target_position = null
-#
-#	# ERR catch
-#	if not arg_return_type in RETURN_TYPE.values():
-#		GlobalDebug.log_error(CLASS_SCRIPT_NAME,
-#				"get_target_data_by_selection",
-#				"return type argument invalid")
-#
-#	# selection mode determines available return types
-#	# set selection mode to SELECTION.NONE to disable targeter
-#	match selection_mode:
-#		# get mouse pos
-#		# mouse look cannot return node references
-#		SELECTION.MOUSE_LOOK:
-##			potential_target_position = get_local_mouse_position()
-#			potential_target_position = get_global_mouse_position()
-#
-#		# by custom method
-#		# selector methods can return node ref or global position
-#		SELECTION.SELECTOR_METHOD:
-#			if selector_method != null:
-#				if has_method(selector_method):
-#					# 'selector returns' export allows for specifying the
-#					# return value of the selector method
-#					# if the chosen method does not return the specified type,
-#					# the target ref or position will be null
-#					if selector_returns == RETURN_TYPE.NODE_REFERENCE:
-#						potential_target = call(selector_method)
-#					if selector_returns == RETURN_TYPE.GLOBAL_POSITION:
-#						potential_target_position = call(selector_method)
-#
-#	# if potential target is null, cannot return a node ref even if asked for
-#	if potential_target is Node2D:
-#		if arg_return_type == RETURN_TYPE.NODE_REFERENCE:
-#				return potential_target
-#		# if not returning node reference we are returning position
-#		else:
-#			potential_target_position = potential_target.global_position
-#
-#	# if no potential target is set (such as in the case of mouse look
-#	# selection) then the potential_target_position is set elsewhere
-#	if potential_target_position is Vector2:
-#		if arg_return_type == RETURN_TYPE.GLOBAL_POSITION:
-#				return potential_target_position
-#
-#	# if no valid output then
-#	# catchall end statement
-#	return null
 
 
 ##############################################################################
