@@ -18,14 +18,6 @@ class_name EntityAbilityTargeter
 
 ##############################################################################
 
-#//TODO
-# clean documentation
-
-#//TODO 
-# (search file)
-
-##############################################################################
-
 # properties (signals, enums, constants, exports, variables, onreadys)
 
 # pass along a reference to the target
@@ -45,16 +37,15 @@ enum RETURN_TYPE {
 	GLOBAL_POSITION,
 }
 
-# how to target the ability during target selection state
-# when utilising an automatic (prefix AUTO_) target selection mode the position
-# of this node is considered for distance to the target, so make sure your
-# entityAbilityController nodes are scene tree children of your entities.
-#
-# NONE - disables all return options
-# MOUSE_LOOK - can only return position, not target reference
-# AUTOMATIC - automatic requires a specified target logic to be set on the
-#	'selector_method' property. This should be a method that returns either a
-# Node2D or null; extend this class to add your own selection methods.
+# the selection values are used by the selection method property to determine
+# what properties the targeter tracks in a potential target, and how it
+# gets those properties.
+# by default,
+# NONE - tracks no properties
+# MOUSE_LOOK - tracks the global_position of the mouse cursor
+# SELECTOR_METHOD - tracks either node reference or global_position, according
+#	to a custom method specified under the selector_method property (see that
+#	property for a more detailed explanation)
 enum SELECTION {
 	NONE,
 	MOUSE_LOOK,
@@ -62,15 +53,24 @@ enum SELECTION {
 	}
 
 # when to show the ability's relevant targeting reticule
+# SHOW_IMMEDIATELY - targeter sets reticule visible then never adjusts it
+# SHOW_ON_ACTIVATION - targeter sets reticule visible when it recieves the
+#	'activate_ability' signal from an activation controller parent (this is
+#	automatically configured), then sets it invisible after a brief period
+#	(see the 'show_reticule_duration' property)
+# SHOW_ON_TARGETING - targeter sets reticule visible or invisible when it
+#	recieves the 'input_confirming' signal from an activation controller parent
+#	(this is automatically configured), based on the included true/false arg.
+# DO_NOT_SHOW - targeter sets reticule invisible then never adjusts it
 enum RETICULE {
-	SHOW_ALWAYS,
+	SHOW_IMMEDIATELY,
 	SHOW_ON_ACTIVATION,
 	SHOW_ON_TARGETING,
-	NEVER_SHOW,
+	DO_NOT_SHOW,
 	}
 
-# disable when finished
-# for dev logging
+# for developer logging only (see ddat-gpf.core.GlobalDebug)
+# disable verbose_logging when finished to prevent logspam
 const CLASS_VERBOSE_LOGGING := false
 const CLASS_SCRIPT_NAME := "ActivationController"
 
@@ -80,18 +80,22 @@ export(bool) var output_target_reference := true
 # 'output_target_position' -> emit signal 'update_target_position'
 export(bool) var output_target_position := true
 
-# the node group string to pick potential targets from
-# used as-is this has the potential to negatively impact performance,
-# (especially calculating distance), so to prune potential targets consider;
-#	adding a collision shape (change grouping as targets enter/exit shape),
-#	change target grouping on screen enter/exit using visibility notifiers
+# for selector methods that wish use a node group to select their targets
+# if utilising, remember to assign enemies to the group
+# enemies can be assigned on _ready calls, when entering a specific collision
+# area around the player, or when entering the screen (with visibility
+# notifiers), to name a few ways.
+# developers should be aware that custom selector methods and broad target
+# groups (e.g. if all enemies are all in the group, there are many enemies,
+# and the selector method frequently searches the group) have the potential
+# for lag
 export(String) var target_groupstring := "groupstring_enemy"
 
-# the active target selection mode, see SELECTION
-# if using an automatic target selection mode the properties following this
-# property determine how to handle automatic target selection
-export(SELECTION) var selection_mode
+# the target selection mode, see the SELECTION enum for more details
+export(SELECTION) var selection_mode := SELECTION.NONE
 
+# the method name of any custom selector method written in an extended
+# targeter class; defaults to the sample '_get_nearest' method included
 export(String) var selector_method := "_get_nearest"
 
 # selector methods can be written to support node reference return (preferred)
@@ -103,16 +107,16 @@ export(String) var selector_method := "_get_nearest"
 export(RETURN_TYPE) var selector_returns := RETURN_TYPE.NODE_REFERENCE
 
 # how many frames between updating target
-# lower values may cause lag with large numbers of entityAbilityTargeters
+# this is not how frequently the target collects data about their target or
+# who to target, but rather how often they pass that data along
 export(float, 0.0, 10.0) var update_frequency := 0.5
 
 # the active targeting reticule mode, see RETICULE
-export(RETICULE) var reticule_mode =\
-		RETICULE.SHOW_ALWAYS
+export(RETICULE) var reticule_mode := RETICULE.SHOW_IMMEDIATELY
 
 # path to a sprite that displays as the targeting reticule for this ability
-# if no path is set the chosen_targeting_reticule property will default to
-# RETICULE.NEVER_SHOW, and targeting reticules will be ignored
+# if no path is set the reticule_mode property will default to
+# RETICULE.DO_NOT_SHOW, and targeting reticules will be ignored
 export(NodePath) var path_to_reticule_sprite
 
 # duration to show the reticule on ActivationController activation
@@ -122,13 +126,12 @@ export(float, 0.0, 60.0) var show_reticule_duration := 0.4
 # delta accumulation since last signal update
 var frames_since_last_update := 0.0
 
-# stored reference of last target
+# stored node reference of last target; should always be a node2D (or extended
+# class), or null
 var current_target
-# stored position of last target
+# stored position of last target; if current_target is set this will default
+# to the global_position property of the current_target
 var current_target_position
-
-# if on and in RETICULE.SHOW_ON_TARGETING mode, shows targeting graphics
-var is_targeting_active := false setget _set_is_targeting_active
 
 # tracking whether the reticule has been temporarily shown after activation
 # only applies if reticule mode is set to RETICULE.SHOW_ON_ACTIVATION
@@ -149,11 +152,6 @@ var is_reticule_setup := false
 ##############################################################################
 
 # setters and getters
-
-func _set_is_targeting_active(arg_value):
-	is_targeting_active = arg_value
-	if reticule_mode == RETICULE.SHOW_ON_TARGETING:
-		_change_targeting_reticule_visibility(arg_value)
 
 
 ##############################################################################
@@ -308,15 +306,16 @@ func _attempt_to_set_targeting_reticule():
 		return
 	var get_potential_reticule = get_node_or_null(path_to_reticule_sprite)
 	if get_potential_reticule == null:
+		reticule_mode = RETICULE.DO_NOT_SHOW
 		if CLASS_VERBOSE_LOGGING:
 			GlobalDebug.log_error(CLASS_SCRIPT_NAME, "path_to_reticule_sprite",
 					"reticule sprite path invalid")
 		return
 	if get_potential_reticule is Sprite:
 		targeting_reticule_node = get_potential_reticule
-		if reticule_mode == RETICULE.SHOW_ALWAYS:
+		if reticule_mode == RETICULE.SHOW_IMMEDIATELY:
 			_change_targeting_reticule_visibility(true)
-		elif reticule_mode == RETICULE.NEVER_SHOW:
+		elif reticule_mode == RETICULE.DO_NOT_SHOW:
 			_change_targeting_reticule_visibility(false)
 
 
@@ -340,8 +339,8 @@ func _change_targeting_reticule_visibility(arg_show: bool = false):
 # method returns a node2D or node2D extended node if it finds a target
 # method returns null if no valid target
 func _get_nearest():
-	var get_target_group = get_target_group()
-	if get_target_group.empty():
+	var potential_target_group = get_target_group()
+	if potential_target_group.empty():
 		return null
 	# if target group exists, check distances
 	var closest_target: Node2D
@@ -349,7 +348,7 @@ func _get_nearest():
 	var dist_to_potential_target: float
 	# loop through target group
 	# gather distances but only remember the closest node
-	for potential_target_node in get_target_group:
+	for potential_target_node in potential_target_group:
 		#err handling, type check
 		if not (potential_target_node is Node2D):
 			continue
@@ -386,7 +385,8 @@ func _show_reticule_on_activation():
 func _show_reticule_on_targeting(target_state: bool):
 	GlobalDebug.log_success(CLASS_VERBOSE_LOGGING, CLASS_SCRIPT_NAME,
 			"_show_reticule_on_targeting", "signal received")
-	self.is_targeting_active = target_state
+	if reticule_mode == RETICULE.SHOW_ON_TARGETING:
+		_change_targeting_reticule_visibility(target_state)
 
 
 #//TODO test the tree exit connection
