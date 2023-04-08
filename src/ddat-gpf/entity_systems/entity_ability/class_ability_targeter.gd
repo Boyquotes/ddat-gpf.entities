@@ -236,15 +236,9 @@ func _process(arg_delta):
 				clamp(frames_since_last_update/frames_to_next_update, 0.0, 1.0)
 		emit_signal("update_not_ready",
 				frames_to_next_update, proportion_to_next_update)
-	#
+	
 	# reticule handling
-	# (checked during RETICULE.SHOW_ON_ACTIVATION mode)
-	if showing_reticule_after_activation:
-		frames_since_reticule_shown += arg_delta
-		if frames_since_reticule_shown >= show_reticule_duration:
-			frames_since_reticule_shown = 0.0
-			showing_reticule_after_activation = false
-			_set_reticule_visibility(false)
+	_process_reticule_handling(arg_delta)
 
 
 # custom target selection methods can be added to extended targeter classes
@@ -355,6 +349,17 @@ func _process_output_target_data():
 	if output_target_position:
 		if current_target_position != null:
 			emit_signal("update_target_position", current_target_position)
+
+
+func _process_reticule_handling(arg_delta):
+	# reticule handling
+	# (checked during RETICULE.SHOW_ON_ACTIVATION mode)
+	if showing_reticule_after_activation:
+		frames_since_reticule_shown += arg_delta
+		if frames_since_reticule_shown >= show_reticule_duration:
+			frames_since_reticule_shown = 0.0
+			showing_reticule_after_activation = false
+			_set_reticule_visibility(false)
 
 
 ##############################################################################
