@@ -22,11 +22,11 @@ class_name AbilityController
 # for ability warmup animations
 # only emitted if 'ability_warmup' is positive
 # warning-ignore:unused_signal
-signal warming_up(warmup_remaining)
+signal ability_warmup_active(warmup_remaining)
 # for ui elements and ability cooldown animations
 # only emitted if 'ability_cooldown' is positive
 # warning-ignore:unused_signal
-signal cooling_down(cooldown_remaining)
+signal ability_cooldown_active(cooldown_remaining)
 # indicates that the ability is about to fire
 # only emitted if 'ability_warmup' is positive
 # warning-ignore:unused_signal
@@ -35,14 +35,34 @@ signal ability_warmup_finished()
 # only emitted if 'ability_cooldown' is positive
 # warning-ignore:unused_signal
 signal ability_cooldown_finished()
-# emitted alongside activate_ability, for ui elements to track usage remaining
+# emitted alongside the 'activate_ability' signal
+# useful for ui elements to track usage remaining
 # only emitted if 'max_usages' property is nil or positive
 # warning-ignore:unused_signal
-signal ability_use_spent(uses_remaining)
+signal ability_usage_spent(uses_remaining)
 # emitted when a usage is refreshed, for ui elements
 # only emitted if 'refresh_usages_time' and 'usages_refresh_amount' are valid
+# 'uses_refreshed' value will be equal to 'usages_refresh_amount' unless the
+# number of usages to be refreshed would take the usages over the maximum
 # warning-ignore:unused_signal
-signal ability_use_refreshed(uses_refreshed)
+signal ability_usage_refreshed(uses_refreshed)
+
+# signal for indicating an activation would have happened, but a specific
+# abilityController condition blocked it activating
+# (useful for ui element animations/feedback)
+# should pass a specific error code (see 'ACTIVATION_FAIL' enum) as to why
+# warning-ignore:unused_signal
+signal failed_activation(error_code)
+
+# error codes that should be passed with the 'failed_activation' signal
+# FAILED_NO_USES_LEFT - ability had no usages remaining on activation call
+# FAILED_ON_COOLDOWN - ability was on cooldown on activation call
+# FAILED_ON_WARMUP - ability was already warming up on activation call
+enum ACTIVATION_FAIL {
+	FAILED_NO_USES_LEFT,
+	FAILED_ON_COOLDOWN,
+	FAILED_ON_WARMUP,
+}
 
 # how the usage refresh properties work
 # NEVER - refresh delay and timer counts constantly (default behaviour)
