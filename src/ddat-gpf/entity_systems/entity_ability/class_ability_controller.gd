@@ -21,21 +21,27 @@ class_name AbilityController
 
 # for ability warmup animations
 # only emitted if 'ability_warmup' is positive
+# warning-ignore:unused_signal
 signal warming_up(warmup_remaining)
 # for ui elements and ability cooldown animations
 # only emitted if 'ability_cooldown' is positive
+# warning-ignore:unused_signal
 signal cooling_down(cooldown_remaining)
 # indicates that the ability is about to fire
 # only emitted if 'ability_warmup' is positive
+# warning-ignore:unused_signal
 signal ability_warmup_finished()
 # indicates that the ability can be used again
 # only emitted if 'ability_cooldown' is positive
+# warning-ignore:unused_signal
 signal ability_cooldown_finished()
 # emitted alongside activate_ability, for ui elements to track usage remaining
 # only emitted if 'max_usages' property is nil or positive
+# warning-ignore:unused_signal
 signal ability_use_spent(uses_remaining)
 # emitted when a usage is refreshed, for ui elements
 # only emitted if 'refresh_usages_time' and 'usages_refresh_amount' are valid
+# warning-ignore:unused_signal
 signal ability_use_refreshed(uses_refreshed)
 
 # how the usage refresh properties work
@@ -121,6 +127,7 @@ func _ready():
 # shadowed from activation controller to check conditions before activation
 func activate():
 	pass
+	.activate()
 
 
 ##############################################################################

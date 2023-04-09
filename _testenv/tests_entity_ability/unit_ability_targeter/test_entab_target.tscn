@@ -28,7 +28,8 @@ forced_activation_interval = 1.0
 
 [node name="EntityAbilityTargeter" type="Area2D" parent="CenterOfScreen/ActivationController"]
 script = ExtResource( 4 )
-selection_mode = 2
+target_node_selection = 1
+target_position_selection = 2
 update_frequency = 0.01
 reticule_mode = 1
 path_to_reticule_sprite = NodePath("TargetReticule")

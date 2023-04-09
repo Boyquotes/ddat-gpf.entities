@@ -1,0 +1,77 @@
+[gd_scene load_steps=9 format=2]
+
+[ext_resource path="res://_testenv/tests_entity_ability/unit_ability_controller/test_entab_ability_ext.gd" type="Script" id=1]
+[ext_resource path="res://_dev/ddat_icon.png" type="Texture" id=2]
+[ext_resource path="res://_dev/icon.png" type="Texture" id=3]
+[ext_resource path="res://_testenv/tests_entity_ability/unit_ability_controller/test_entity_area_scene.tscn" type="PackedScene" id=4]
+[ext_resource path="res://src/ddat-gpf/entity_systems/entity_ability/class_ability_controller.gd" type="Script" id=5]
+[ext_resource path="res://src/ddat-gpf/entity_systems/entity_ability/class_ability_targeter.gd" type="Script" id=6]
+[ext_resource path="res://src/ddat-gpf/entity_systems/classes/class_entity_area.gd" type="Script" id=7]
+[ext_resource path="res://src/ddat-gpf/entity_systems/entity_extensions/class_entity_spawner.gd" type="Script" id=8]
+
+[node name="EntityAbilityWeaponTest" type="Node2D"]
+script = ExtResource( 1 )
+
+[node name="SampleTargetSprite" type="Sprite" parent="."]
+visible = false
+position = Vector2( 334, 831 )
+texture = ExtResource( 2 )
+
+[node name="CenterOfScreen" type="Position2D" parent="."]
+position = Vector2( 960, 540 )
+
+[node name="AbilityController" type="Node2D" parent="CenterOfScreen"]
+script = ExtResource( 5 )
+use_ability_action = "ui_accept"
+target_clear_action = "ui_cancel"
+
+[node name="EntityAbilityTargeter" type="Area2D" parent="CenterOfScreen/AbilityController"]
+position = Vector2( -960, -540 )
+script = ExtResource( 6 )
+update_frequency = 0.01
+reticule_mode = 1
+path_to_reticule_sprite = NodePath("Reticule")
+
+[node name="Reticule" type="Sprite" parent="CenterOfScreen/AbilityController/EntityAbilityTargeter"]
+visible = false
+self_modulate = Color( 1, 0.392157, 0.392157, 1 )
+position = Vector2( 1200, 540 )
+scale = Vector2( 0.25, 0.25 )
+texture = ExtResource( 2 )
+
+[node name="EntitySpawner" type="Position2D" parent="CenterOfScreen/AbilityController"]
+script = ExtResource( 8 )
+entity_path = NodePath("EntityArea")
+entity_area_scene = ExtResource( 4 )
+
+[node name="EntityArea" type="Area2D" parent="CenterOfScreen/AbilityController/EntitySpawner"]
+visible = false
+script = ExtResource( 7 )
+
+[node name="Sprite" type="Sprite" parent="CenterOfScreen/AbilityController/EntitySpawner/EntityArea"]
+self_modulate = Color( 1, 0.27451, 0.313726, 1 )
+scale = Vector2( 2, 2 )
+texture = ExtResource( 3 )
+
+[node name="RotTargetLine" type="Line2D" parent="CenterOfScreen"]
+points = PoolVector2Array( 0, 0, 215, 0 )
+
+[node name="DebugLabel" type="Label" parent="."]
+margin_left = 186.0
+margin_top = 155.0
+margin_right = 226.0
+margin_bottom = 169.0
+rect_scale = Vector2( 2, 2 )
+
+[node name="EnemyTest1" type="Sprite" parent="."]
+visible = false
+texture = ExtResource( 3 )
+
+[node name="EnemyTest2" type="Sprite" parent="."]
+visible = false
+texture = ExtResource( 3 )
+
+[node name="Tween" type="Tween" parent="."]
+
+[connection signal="activate_ability" from="CenterOfScreen/AbilityController" to="." method="_on_AbilityController_activate_ability"]
+[connection signal="activate_ability" from="CenterOfScreen/AbilityController" to="CenterOfScreen/AbilityController/EntitySpawner" method="spawn"]

@@ -31,6 +31,9 @@ signal update_not_ready(frames_left, proportion_to)
 # for when to show the reticule
 signal change_reticule_visibility(is_visible)
 
+#//TODO
+# update_target_reference should only be emitted if target changed?
+
 #//TODO - is this unused now?
 # the target data to gather and update
 enum RETURN_TYPE {
