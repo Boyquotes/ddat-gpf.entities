@@ -21,12 +21,14 @@ class_name AbilityController
 
 # for ability warmup animations
 # only emitted if 'ability_warmup' is positive
-# warning-ignore:unused_signal
-signal ability_warmup_active(warmup_remaining)
+# warmup_progress is the % of warmup completed
+# (this value can for ui elements and animations)
+signal ability_warmup_active(warmup_progress)
 # for ui elements and ability cooldown animations
 # only emitted if 'ability_cooldown' is positive
-# warning-ignore:unused_signal
-signal ability_cooldown_active(cooldown_remaining)
+# cooldown_progress is the % of warmup completed
+# (this value can for ui elements and animations)
+signal ability_cooldown_active(cooldown_progress)
 # indicates that the ability is about to fire
 # only emitted if 'ability_warmup' is positive
 # warning-ignore:unused_signal
@@ -124,6 +126,26 @@ export(float, 0, 10.0) var refresh_delay_time = 0.0
 # set nil to prevent usage refresh
 export(int, 0, 100) var usages_refresh_amount = 1
 
+# ability state trackers
+var is_in_cooldown := false
+var is_in_warmup := false
+
+# track how long ability state has lasted (for purpose of ending states)
+var frames_since_cooldown_started := 0.0
+var frames_since_warmup_started := 0.0
+
+# set to max usages on ready
+# if negative, usages are infinite
+var current_usages := -1
+
+# track whether refresh timer should be counting
+var ability_usages_can_refresh := false
+
+# track how long since refresh timer started, for purpose of refreshing usages
+var frames_since_refresh_started := 0.0
+# track how long since refresh delay started
+var frames_since_delay_started := 0.0
+
 
 ##############################################################################
 
@@ -138,6 +160,37 @@ func _ready():
 #	ACTIVATION.ON_INTERVAL
 #	ACTIVATION.ON_SIGNAL
 	pass
+	# need to connect signals?
+
+
+func _process(arg_delta):
+	# accumulate delta trackers
+	# ability cooldown
+	if is_in_cooldown:
+		frames_since_cooldown_started += arg_delta
+		# if exceed the cooldown length, end cooldown
+		if frames_since_cooldown_started > ability_cooldown:
+			_on_cooldown_expired()
+		# else, track cooldown
+		else:
+			# pass along %done for ui elements and animations
+			var cooldown_completed = clamp(\
+					(frames_since_cooldown_started/ability_cooldown),
+					0.0, 1.0)
+			emit_signal("ability_cooldown_active", cooldown_completed)
+	# ability warmup
+	if is_in_warmup:
+		frames_since_warmup_started += arg_delta
+		# if exceed the warmup length, end warmup
+		if frames_since_warmup_started > ability_warmup:
+			_on_warmup_expired()
+		# else, track warmup
+		else:
+			# pass along %done for ui elements and animations
+			var warmup_completed = clamp(\
+					(frames_since_warmup_started/ability_warmup),
+					0.0, 1.0)
+			emit_signal("ability_warmup_active", warmup_completed)
 
 ##############################################################################
 
@@ -145,14 +198,94 @@ func _ready():
 
 
 # shadowed from activation controller to check conditions before activation
+# ability controller will check warmup, cooldown, and usages, before it
+# actually activates the ability
 func activate():
-	pass
-	.activate()
+	# check conditions before activating
+	if not _is_warmup_active()\
+	and not _is_cooldown_active()\
+	and _are_usages_remaining():
+		# call ability if no warmup, else 
+		if ability_warmup > 0.0:
+			start_warmup()
+		else:
+			activate_with_cooldown()
+
+
+# precursor to calling the _call_ability method
+# to handle cooldowns
+func activate_with_cooldown():
+	start_cooldown()
+	# activate
+	_call_ability()
+
+
+func change_usages(usage_change: int):
+	usage_change = usage_change
+
+
+# start a new cooldown period
+func start_cooldown():
+	# start cooldown and reset timer
+	is_in_cooldown = true
+	frames_since_cooldown_started = 0.0
+	emit_signal("ability_cooldown_active")
+
+
+# start a new warmup period
+func start_warmup():
+	# start cooldown and reset timer
+	is_in_warmup = true
+	frames_since_warmup_started = 0.0
+	emit_signal("ability_warmup_active")
 
 
 ##############################################################################
 
 # private methods
+
+
+# method to determine whether ability has usages remaining
+func _are_usages_remaining() -> bool:
+	return true
+
+
+# method to determine whether ability is currently in the cooldown state
+func _is_cooldown_active() -> bool:
+	# if cooldown isn't used, cooldown is never active
+	var is_cooldown_enabled = (ability_cooldown > 0.0)
+	# if cooldown is used, check whether ability is in cooldown
+	if is_cooldown_enabled:
+		return is_in_cooldown
+	else:
+		return false
+	
+
+
+# method to determine whether ability is currently in the warmup state
+func _is_warmup_active() -> bool:
+	# if warmup isn't used, warmup  is never active
+	var is_warmup_enabled = (ability_warmup > 0.0)
+	# if warmup  is used, check whether ability is in warmup 
+	if is_warmup_enabled:
+		return is_in_warmup
+	else:
+		return false
+
+
+# after conclusion of cooldown period
+func _on_cooldown_expired():
+	is_in_cooldown = false
+	emit_signal("ability_cooldown_finished")
+
+
+# after conclusion of warmup period
+func _on_warmup_expired():
+	is_in_warmup = false
+	emit_signal("ability_warmup_finished")
+	# warmup always proceeds to activation
+	activate_with_cooldown()
+
 
 ##############################################################################
 
