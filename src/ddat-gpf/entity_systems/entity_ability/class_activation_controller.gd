@@ -255,10 +255,13 @@ func activate():
 # actually the main activation method, activate() method calls this if valid
 # checks the activation cap before actually triggering the ability
 func _call_ability():
+	# cannot activate if activation is disabled
+	if activation_mode == ACTIVATION.DISABLE_ACTIVATION:
+		return
+	# keep tally of activations per frame for activation cap
 	if activations_since_last_frame < activation_cap_per_frame:
 		emit_signal("activate_ability")
 		activations_since_last_frame += 1
-		# signal RETICULE.SHOW_ON_ACTIVATION
 	else:
 		if CLASS_VERBOSE_LOGGING:
 			GlobalDebug.log_error(CLASS_SCRIPT_NAME, "activate",\
