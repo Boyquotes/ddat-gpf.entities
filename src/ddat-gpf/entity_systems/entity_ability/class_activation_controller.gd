@@ -45,6 +45,7 @@ signal input_confirming(is_waiting)
 enum ACTIVATION {
 	INPUT_ACTIVATED,
 	INPUT_TOGGLED,
+	INPUT_WHILST_HELD,
 	INPUT_CONFIRMED_PRESS,
 	INPUT_CONFIRMED_HOLD,
 	CONTINUOUS,
@@ -123,6 +124,11 @@ func _process(arg_delta):
 	if activation_mode == ACTIVATION.CONTINUOUS\
 			or ((activation_mode == ACTIVATION.INPUT_TOGGLED)
 			and (ability_toggle_state == true)):
+		activate()
+	
+	# if input is held down during 'whilst held' mode
+	if activation_mode == ACTIVATION.INPUT_WHILST_HELD\
+	and Input.is_action_pressed(use_ability_action):
 		activate()
 	
 	# count time and activations over a frame
