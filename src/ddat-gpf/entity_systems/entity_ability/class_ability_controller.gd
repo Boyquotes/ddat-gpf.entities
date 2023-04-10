@@ -29,9 +29,20 @@ signal ability_warmup_active(warmup_progress)
 # cooldown_progress is the % of warmup completed
 # (this value can for ui elements and animations)
 signal ability_cooldown_active(cooldown_progress)
+# indicates that the ability is preparing to fire
+# only emitted if 'ability_warmup' is positive
+# separate from corresponding 'active' signal for simply getting the first
+# frame in which the warmup started without having to check a passed value
+# (catches edge cases of frame lag also)
+signal ability_warmup_started()
+# indicates that the ability is entering cooldown
+# only emitted if 'ability_cooldown' is positive
+# separate from corresponding 'active' signal for simply getting the first
+# frame in which the cooldown started without having to check a passed value
+# (catches edge cases of frame lag also)
+signal ability_cooldown_started()
 # indicates that the ability is about to fire
 # only emitted if 'ability_warmup' is positive
-# warning-ignore:unused_signal
 signal ability_warmup_finished()
 # indicates that the ability can be used again
 # only emitted if 'ability_cooldown' is positive
@@ -229,7 +240,8 @@ func start_cooldown():
 	# start cooldown and reset timer
 	is_in_cooldown = true
 	frames_since_cooldown_started = 0.0
-	emit_signal("ability_cooldown_active")
+	emit_signal("ability_cooldown_active", 0.0)
+	emit_signal("ability_cooldown_started")
 
 
 # start a new warmup period
@@ -237,7 +249,8 @@ func start_warmup():
 	# start cooldown and reset timer
 	is_in_warmup = true
 	frames_since_warmup_started = 0.0
-	emit_signal("ability_warmup_active")
+	emit_signal("ability_warmup_active", 0.0)
+	emit_signal("ability_warmup_started")
 
 
 ##############################################################################
