@@ -35,10 +35,13 @@ signal input_confirming(is_waiting)
 # INPUT_ACTIVATED ~ input activates, effect triggers once
 # INPUT_TOGGLED ~ input toggles on/off, in 'on' state the activation
 #	signal is sent every frame
+# INPUT_WHILST_HELD ~ activates every frame whilst input is held
 # INPUT_CONFIRMED_PRESS ~ input starts target selection, repeat press
 #	to confirm, press ability_target_clear action to cancel
 # INPUT_CONFIRMED_HOLD ~ target acquisiton whilst action held, press the
 #	ability_target_clear action to stop or release action to confirm
+# INPUT_MINIMUM_HOLD ~ exactly as confirmed_hold, except the activation occurs
+#	when 'min_hold_duration' is reached automatically (not on input release)
 # CONTINUOUS ~ will send activation signal every frame
 # ON_INTERVAL ~ ability automatically activates on a fixed interval
 # ON_SIGNAL ~ ability activates only on manual signal receipt to main method
@@ -48,6 +51,7 @@ enum ACTIVATION {
 	INPUT_WHILST_HELD,
 	INPUT_CONFIRMED_PRESS,
 	INPUT_CONFIRMED_HOLD,
+	INPUT_MINIMUM_HOLD,
 	CONTINUOUS,
 	ON_INTERVAL,
 	ON_SIGNAL,
@@ -150,6 +154,12 @@ func _process(arg_delta):
 		frames_input_has_been_held += arg_delta
 		if (frames_input_has_been_held>=min_hold_duration):
 			emit_signal("input_held", 1.0)
+			if activation_mode == ACTIVATION.INPUT_MINIMUM_HOLD:
+				is_input_being_held = false
+				frames_input_has_been_held = 0.0
+				emit_signal("held_input_just_released")
+				emit_signal("input_confirming", false)
+				activate()
 		else:
 			emit_signal("input_held",\
 					(frames_input_has_been_held/min_hold_duration))
@@ -160,6 +170,7 @@ func _process(arg_delta):
 		if frames_since_last_forced_activation >= forced_activation_interval:
 			frames_since_last_forced_activation -= forced_activation_interval
 			activate()
+
 
 # on an input arg_event
 func _input(arg_event):
@@ -192,6 +203,14 @@ func _input(arg_event):
 			
 			# input must be held
 			ACTIVATION.INPUT_CONFIRMED_HOLD:
+				# emit input-waiting-to-be-confirmed signal on first frame only
+				if not is_input_being_held:
+						emit_signal("input_confirming", true)
+				self.is_input_checking_active = true
+				is_input_being_held = true
+			
+			# exactly as input_confirmed_hold
+			ACTIVATION.INPUT_MINIMUM_HOLD:
 				# emit input-waiting-to-be-confirmed signal on first frame only
 				if not is_input_being_held:
 						emit_signal("input_confirming", true)
