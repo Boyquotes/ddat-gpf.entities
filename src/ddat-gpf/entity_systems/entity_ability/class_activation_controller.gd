@@ -32,7 +32,7 @@ signal held_input_just_released()
 signal input_confirming(is_waiting)
 
 # how input affects the activation of the ability
-# INPUT_ACTIVATED ~ input activates, effect triggers once
+# INPUT_PRESSED ~ input activates, effect triggers once
 # INPUT_TOGGLED ~ input toggles on/off, in 'on' state the activation
 #	signal is sent every frame
 # INPUT_WHILST_HELD ~ activates every frame whilst input is held
@@ -46,7 +46,7 @@ signal input_confirming(is_waiting)
 # ON_INTERVAL ~ ability automatically activates on a fixed interval
 # ON_SIGNAL ~ ability activates only on manual signal receipt to main method
 enum ACTIVATION {
-	INPUT_ACTIVATED,
+	INPUT_PRESSED,
 	INPUT_TOGGLED,
 	INPUT_WHILST_HELD,
 	INPUT_CONFIRMED_PRESS,
@@ -70,7 +70,7 @@ export(int, 0, 121) var activation_cap_per_frame := 60
 
 # the active input mode, see ACTIVATION
 export(ACTIVATION) var activation_mode =\
-		ACTIVATION.INPUT_ACTIVATED
+		ACTIVATION.INPUT_PRESSED
 # the InputMap action (see projectSettings) that the input mode responds to
 export(String) var use_ability_action = "activate_ability_1"
 # the InputMap action (see projectSettings) that clears target acquisiton
@@ -179,7 +179,7 @@ func _input(arg_event):
 		match activation_mode:
 			
 			# single press activates
-			ACTIVATION.INPUT_ACTIVATED:
+			ACTIVATION.INPUT_PRESSED:
 				activate()
 			
 			# single press toggles state
