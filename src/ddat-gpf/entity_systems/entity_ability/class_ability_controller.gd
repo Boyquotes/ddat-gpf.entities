@@ -52,18 +52,18 @@ signal ability_usage_refreshed(uses_refreshed)
 # signal for indicating an activation would have happened, but a specific
 # abilityController condition blocked it activating
 # (useful for ui element animations/feedback)
-# should pass a specific error code (see 'ACTIVATION_FAIL' enum) as to why
+# should pass a specific error code (see 'ACTIVATION_ERROR' enum) as to why
 # warning-ignore:unused_signal
 signal failed_activation(error_code)
 
 # error codes that should be passed with the 'failed_activation' signal
-# FAILED_NO_USES_LEFT - ability had no usages remaining on activation call
-# FAILED_ON_COOLDOWN - ability was on cooldown on activation call
-# FAILED_ON_WARMUP - ability was already warming up on activation call
-enum ACTIVATION_FAIL {
-	FAILED_NO_USES_LEFT,
-	FAILED_ON_COOLDOWN,
-	FAILED_ON_WARMUP,
+# ERR_NO_USES_LEFT - ability had no usages remaining on activation call
+# ERR_ON_COOLDOWN - ability was on cooldown on activation call
+# ERR_ON_WARMUP - ability was already warming up on activation call
+enum ACTIVATION_ERROR {
+	ERR_NO_USES_LEFT,
+	ERR_ON_COOLDOWN,
+	ERR_ON_WARMUP,
 }
 
 # how the usage refresh properties work
