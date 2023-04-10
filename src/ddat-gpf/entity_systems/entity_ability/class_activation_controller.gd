@@ -18,7 +18,7 @@ class_name ActivationController
 # all prerequisites and recieving the required activation input
 # connect this to the node you are controlling with the ActivationController
 signal activate_ability()
-# applies every frame that input is held (applies on CONFIRMED_HOLD)
+# emits for CONFIRMED_HOLD or MINIMUM_HOLD on amy frame that input is held
 # parameter is whether the minimum hold duration is reached
 signal input_held(hold_dur_left)
 # emitted on the frame the activation input is released
@@ -44,7 +44,11 @@ signal input_confirming(is_waiting)
 #	when 'min_hold_duration' is reached automatically (not on input release)
 # CONTINUOUS ~ will send activation signal every frame
 # ON_INTERVAL ~ ability automatically activates on a fixed interval
-# ON_SIGNAL ~ ability activates only on manual signal receipt to main method
+# ON_SIGNAL_ONLY ~ ability only activates with direct call to 'activate' method
+#	devnote: abilities can always be called with a signal connection to the
+#	'activate' method, but this activation mode skips other input conditions
+#	without entirely disabling activation
+# DISABLE_ACTIVATION ~ ability is blocked from activating entirely
 enum ACTIVATION {
 	INPUT_PRESSED,
 	INPUT_TOGGLED,
@@ -54,7 +58,7 @@ enum ACTIVATION {
 	INPUT_MINIMUM_HOLD,
 	CONTINUOUS,
 	ON_INTERVAL,
-	ON_SIGNAL,
+	ON_SIGNAL_ONLY,
 	DISABLE_ACTIVATION,
 	}
 
