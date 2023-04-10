@@ -24,6 +24,8 @@ position = Vector2( 960, 540 )
 script = ExtResource( 5 )
 use_ability_action = "ui_accept"
 target_clear_action = "ui_cancel"
+ability_warmup = 0.75
+ability_cooldown = 2.0
 
 [node name="EntityAbilityTargeter" type="Area2D" parent="CenterOfScreen/AbilityController"]
 position = Vector2( -960, -540 )
@@ -73,5 +75,11 @@ texture = ExtResource( 3 )
 
 [node name="Tween" type="Tween" parent="."]
 
+[connection signal="ability_cooldown_active" from="CenterOfScreen/AbilityController" to="." method="_on_AbilityController_ability_cooldown_active"]
+[connection signal="ability_cooldown_finished" from="CenterOfScreen/AbilityController" to="." method="_on_AbilityController_ability_cooldown_finished"]
+[connection signal="ability_cooldown_started" from="CenterOfScreen/AbilityController" to="." method="_on_AbilityController_ability_cooldown_started"]
+[connection signal="ability_warmup_active" from="CenterOfScreen/AbilityController" to="." method="_on_AbilityController_ability_warmup_active"]
+[connection signal="ability_warmup_finished" from="CenterOfScreen/AbilityController" to="." method="_on_AbilityController_ability_warmup_finished"]
+[connection signal="ability_warmup_started" from="CenterOfScreen/AbilityController" to="." method="_on_AbilityController_ability_warmup_started"]
 [connection signal="activate_ability" from="CenterOfScreen/AbilityController" to="." method="_on_AbilityController_activate_ability"]
 [connection signal="activate_ability" from="CenterOfScreen/AbilityController" to="CenterOfScreen/AbilityController/EntitySpawner" method="spawn"]
