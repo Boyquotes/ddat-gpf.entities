@@ -39,7 +39,6 @@ signal ability_cooldown_started()
 signal ability_warmup_finished()
 # indicates that the ability can be used again
 # only emitted if 'ability_cooldown' is positive
-# warning-ignore:unused_signal
 signal ability_cooldown_finished()
 
 # emitted when ability no longer has enough usages remaining to spend
@@ -52,13 +51,11 @@ signal ability_usages_full()
 # useful for ui elements to track usage remaining
 # only emitted if 'max_usages' property is positive
 # will be emitted even if 'usages_refresh_amount' is nil
-# warning-ignore:unused_signal
 signal ability_usage_spent(uses_remaining, uses_spent)
 # emitted when a usage is refreshed, for ui elements
 # only emitted if 'refresh_usages_time' and 'usages_refresh_amount' are valid
 # 'uses_refreshed' value will be equal to 'usages_refresh_amount' unless the
 # number of usages to be refreshed would take the usages over the maximum
-# warning-ignore:unused_signal
 signal ability_usage_refreshed(uses_remaining, uses_refreshed)
 # for ui elements and ability usage refreshing animations
 # only emits if 'refresh_usages_time' > 0.0, and 'infinite_usages' == false
@@ -79,7 +76,6 @@ signal refresh_delay_active(delay_progress)
 # abilityController condition blocked it activating
 # (useful for ui element animations/feedback)
 # should pass a specific error code (see 'ACTIVATION_ERROR' enum) as to why
-# warning-ignore:unused_signal
 signal failed_activation(error_code)
 
 # error codes that should be passed with the 'failed_activation' signal
