@@ -106,7 +106,6 @@ enum REFRESH_DELAY {
 	IN_USE,
 	ON_COOLDOWN,
 	ON_WARMUP,
-	IF_NOT_NIL,
 	}
 
 # disable when finished
