@@ -65,6 +65,16 @@ signal ability_usage_refreshed(uses_remaining, uses_refreshed)
 # cooldown_progress is the % of refresh completed
 signal ability_refresh_active(refresh_progress)
 
+# emits on first frame a new refresh delay starts (will not emit if a refresh
+# delay starts whilst a refresh delay is already active)
+signal refresh_delay_started()
+# emits on the frame a refresh delay ends
+signal refresh_delay_ended()
+# for ui elements and animations
+# only emits if 'refresh_delay_duration' > 0.0, and 'infinite_usages' == false
+# cooldown_progress is the % of refresh delay completed
+signal refresh_delay_active(delay_progress)
+
 # signal for indicating an activation would have happened, but a specific
 # abilityController condition blocked it activating
 # (useful for ui element animations/feedback)
@@ -91,7 +101,7 @@ enum ACTIVATION_ERROR {
 # IF_NOT_NIL - refresh timer only starts if all usages have been spent
 #	(this setting is best used with a low 'refresh_usages_time' or high
 #	'usages_refresh_amount' value)
-enum REFRESH_PAUSE {
+enum REFRESH_DELAY {
 	NEVER,
 	IN_USE,
 	ON_COOLDOWN,
@@ -146,13 +156,13 @@ export(int, 0, 100) var max_usages = 0
 # set nil to prevent the ability consuming uses on activation
 export(int, 0, 100) var usages_cost = 1
 # if disabled prevents all refresh timer behaviour
-export(bool) var usages_refreshed_over_time := true
+export(bool) var enable_usage_refresh_over_time := true
 # how many usages are refreshed when the use_refresh_time is exceed
 # usages refreshed are capped at maximum usages
 # set nil to prevent usage refresh
 export(int, 0, 100) var usages_refresh_amount = 1
-# the chosen refresh setting (see the REFRESH_PAUSE enum for detail)
-export(REFRESH_PAUSE) var refresh_pause_mode := REFRESH_PAUSE.NEVER
+# the chosen refresh setting (see the REFRESH_DELAY enum for detail)
+export(REFRESH_DELAY) var refresh_delay_mode := REFRESH_DELAY.NEVER
 # how long (in frames) before an ability regains a set number of uses
 # set nil to prevent usage refresh
 # if current usages >= maximum uses, the refresh timer is not checked
@@ -161,8 +171,8 @@ export(float, 0.0, 100.0) var refresh_usages_time = 1.0
 # set nil to disable
 # the refresh timer provides signal updates for ui elements
 # this property is useful if you want a delay for refresh time whenever
-# the condition for REFRESH_PAUSE is met
-export(float, 0, 10.0) var refresh_delay_time = 0.0
+# the condition for REFRESH_DELAY is met
+export(float, 0, 10.0) var refresh_delay_duration = 0.0
 
 # ability state trackers
 var is_in_cooldown := false
@@ -175,17 +185,34 @@ var frames_since_warmup_started := 0.0
 # set to max usages on ready
 var current_usages := 0
 
-# track whether refresh timer should be counting
-# this isn't set or unset by abilityController; option to set from elsewhere
-# abilityController tracks if refresh can process w/'is_refresh_valid' method
-var ability_usages_can_refresh := true
-# track if refresh delay is active
-var ability_usage_refresh_delayed := false
-
 # track how long since refresh timer started, for purpose of refreshing usages
 var frames_since_refresh_started := 0.0
 # track how long since refresh delay started
 var frames_since_delay_started := 0.0
+
+# tracks whether a refresh delay is active (for the purpose of tracking
+# when the delay ends so a signal can be emitted)
+var refresh_delay_is_active := false
+
+# track whether the ability can use a cooldown
+# this isn't set or unset by abilityController; this is an optional flag that
+# devs can set false from elsewhere to control ability cooldowns
+var ability_can_cooldown := true
+# track whether the ability can use a warmup
+# this isn't set or unset by abilityController; this is an optional flag that
+# devs can set false from elsewhere to control ability warmups
+var ability_can_warmup := true
+# track whether refresh timer should be counting
+# this isn't set or unset by abilityController; this is an optional flag that
+# devs can set false from elsewhere to control the refresh timer
+# abilityController tracks if refresh can process w/'is_refresh_valid' method
+var ability_usages_can_refresh := true
+# track if refresh delay is active
+# this isn't set or unset by abilityController; this is an optional flag that
+# devs can set false from elsewhere to control the refresh delay
+# abilityController tracks if the refresh delay is processing with the
+# 'is_refresh_delay_valid' method
+var ability_usage_refresh_can_delay := true
 
 
 ##############################################################################
@@ -258,12 +285,28 @@ func _process_refresh_time(arg_delta):
 			emit_signal("ability_refresh_active", refresh_completed)
 
 
-# temporary/placeholder
+# handle the delay before the refresh timer restarts (if interrupted, see
+# the REFRESH_DELAY enum for more detail)
 func _process_refresh_delay(arg_delta):
-	# refresh delay processing immediately skipped if invalid or inactive
-	pass
-	arg_delta = arg_delta
-	# refresh delay does not have a % done signal like cd/wm/rfrsh
+	# if delay is active, reset frame count
+	if is_refresh_delay_valid():
+		if frames_since_delay_started > 0.0:
+			emit_signal("refresh_delay_started")
+		frames_since_delay_started = 0.0
+		refresh_delay_is_active = true
+	# if delay is not active, can begin to count for the delay
+	elif frames_since_delay_started < refresh_delay_duration\
+	and refresh_delay_is_active:
+		frames_since_delay_started += arg_delta
+		# progress udpate for ui elements and animations
+		var refresh_delay_completed = clamp(\
+				(frames_since_delay_started/refresh_delay_duration),
+				0.0, 1.0)
+		emit_signal("refresh_delay_active", refresh_delay_completed)
+	else:
+		if refresh_delay_is_active:
+			emit_signal("refresh_delay_ended")
+			refresh_delay_is_active = false
 
 
 ##############################################################################
@@ -363,36 +406,6 @@ func change_cooldown_state(activate_cooldown: bool = true) -> void:
 	elif not activate_cooldown and is_in_cooldown:
 		is_in_cooldown = activate_cooldown
 		emit_signal("ability_cooldown_finished")
-#
-#	# whenever cooldown or warmup state is changed,
-#	# check the refresh pause state
-#	recheck_refresh_pause_state()
-#
-#
-#func recheck_refresh_pause_state():
-#	var refresh_is_valid_state := true
-#	# if cooldown is on then ON_COOLDOWN or IN_USE modes for REFRESH_PAUSE
-#	# cause refresh pause; if using refresh delay this will restart the delay
-#	if refresh_pause_mode == REFRESH_PAUSE.ON_COOLDOWN\
-#	or refresh_pause_mode == REFRESH_PAUSE.IN_USE:
-#		if is_in_cooldown:
-#			refresh_is_valid_state = false
-#	# if warmup is on then ON_WARMUP or IN_USE modes for REFRESH_PAUSE
-#	# cause refresh pause; if using refresh delay this will restart the delay
-#	if refresh_pause_mode == REFRESH_PAUSE.ON_WARMUP\
-#	or refresh_pause_mode == REFRESH_PAUSE.IN_USE:
-#		if is_in_warmup:
-#			refresh_is_valid_state = false
-#	# if a refresh blocked state (see above) is met,
-#	# refresh is blocked and delay is called if it wasn't already active
-#	ability_usages_can_refresh = refresh_is_valid_state
-#	if infinite_usages:
-#		return false
-#
-#	#temp
-#	if refresh_pause_mode == REFRESH_PAUSE.ON_WARMUP\
-#	or refresh_pause_mode == REFRESH_PAUSE.IN_USE:
-#		ability_usages_can_refresh = false
 
 
 # start a new warmup period
@@ -427,6 +440,9 @@ func is_cooldown_active() -> bool:
 
 # method to determine whether ability uses a cooldown
 func is_cooldown_valid() -> bool:
+	# skip if optional flag is set false
+	if ability_can_cooldown == false:
+		return false
 	# if cooldown isn't used, cooldown is never active
 	if enable_cooldown == false\
 	or (ability_cooldown == 0.0):
@@ -435,17 +451,56 @@ func is_cooldown_valid() -> bool:
 		return true
 
 
+# check if ability delay is active
+# if delay is active the property 'frames_since_delay_started' will be set
+# to nil and must count back up to the export value 'refresh_delay_duration'
+# if delay is not active 'frames_since_delay_started' can begin to count up
+# only when frames_since_delay_started exceeds 'refresh_delay_duration' will
+# 'frames_since_refresh_started' begin to count up (on the next _process call)
+func is_refresh_delay_valid() -> bool:
+	# skip if not using usages
+	if infinite_usages:
+		return false
+	# skip if optional argument is set
+	if ability_usage_refresh_can_delay == false:
+		return false
+	# if refresh delay is disabled, skip
+	if refresh_delay_mode == REFRESH_DELAY.NEVER\
+	or refresh_delay_duration == 0.0:
+		return false
+	# check multiple conditions, if any are fulfilled, refresh delay is active
+	# if in catch-all or cooldown-only delay mode, must not be in cooldown
+	if refresh_delay_mode == REFRESH_DELAY.ON_COOLDOWN\
+	or refresh_delay_mode == REFRESH_DELAY.IN_USE:
+		if is_cooldown_active():
+			return true
+	# if in catch-all or warmup-only delay mode, must not be in warmup
+	if refresh_delay_mode == REFRESH_DELAY.ON_WARMUP\
+	or refresh_delay_mode == REFRESH_DELAY.IN_USE:
+		if is_warmup_active():
+			return true
+	# catchall exit
+	return false
+
+
 # check if ability refresh timer can count
 func is_refresh_valid() -> bool:
 	# skip if not using usages
 	if infinite_usages:
 		return false
-	# public usage flag must be set
-	# export flag must be set
-	# current usages must be less than maximum usages
-	# max usages cannot be nil
+	# cannot be valid if delay is active
+	elif is_refresh_delay_valid():
+		return false
+	# if delay isn't active, it must not have been active recently
+	elif refresh_delay_is_active:
+		return false
+	# check other conditions:
+	#	public usage flag must be set
+	#	export flag must be set
+	#	current usages must be less than maximum usages
+	#	max usages cannot be nil
 	if ability_usages_can_refresh\
-	and usages_refreshed_over_time\
+	and enable_usage_refresh_over_time\
 	and current_usages < max_usages\
 	and max_usages > MINIMUM_USAGES:
 		return true
@@ -455,7 +510,7 @@ func is_refresh_valid() -> bool:
 #		GlobalDebug.log_error(SCRIPT_NAME, "is_refresh_valid",
 #				"refresh status log = {1}/{2}/{3}/{4}".format({
 #					"1": ability_usages_can_refresh,
-#					"2": usages_refreshed_over_time,
+#					"2": enable_usage_refresh_over_time,
 #					"3": (current_usages < max_usages),
 #					"4": (max_usages > MINIMUM_USAGES),
 #				}))
@@ -473,6 +528,9 @@ func is_warmup_active() -> bool:
 
 # method to determine whether ability uses a warmup
 func is_warmup_valid() -> bool:
+	# skip if optional flag is set false
+	if ability_can_warmup == false:
+		return false
 	# if warmup isn't used, warmup  is never active
 	if enable_warmup == false\
 	or (ability_warmup == 0.0):
