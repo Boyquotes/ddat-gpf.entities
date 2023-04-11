@@ -253,31 +253,29 @@ func change_usages(usage_change: int):
 # start a new cooldown period or end an active cooldown period
 # if 'activate_cooldown' is true, starts cooldown (if not already active)
 # if 'activate_cooldown' is false, ends the active cooldown period (if any)
-func change_cooldown_state(activate_cooldown: bool = true):
+func change_cooldown_state(activate_cooldown: bool = true) -> void:
+	# skip if called without valid cooldown
+	if _is_cooldown_valid() == false:
+		return
 	# start cooldown and reset timer (if not already in cooldown)
 	if activate_cooldown and not is_in_cooldown:
-		is_in_cooldown = true
+		is_in_cooldown = activate_cooldown
 		frames_since_cooldown_started = 0.0
 		emit_signal("ability_cooldown_active", 0.0)
 		emit_signal("ability_cooldown_started")
 	# end cooldown state
 	elif not activate_cooldown and is_in_cooldown:
-		is_in_cooldown = false
+		is_in_cooldown = activate_cooldown
 		emit_signal("ability_cooldown_finished")
-	
-	#temp
-#	if refresh_pause_mode == REFRESH_PAUSE.ON_COOLDOWN\
-#	or refresh_pause_mode == REFRESH_PAUSE.IN_USE:
-#		ability_usages_can_refresh = false
-#	if refresh_pause_mode == REFRESH_PAUSE.ON_WARMUP\
-#	or refresh_pause_mode == REFRESH_PAUSE.IN_USE:
-#		ability_usages_can_refresh = false
 
 
 # start a new warmup period
 # if 'activate_warmup' is true, starts warmup (if not already active)
 # if 'activate_warmup' is false, ends the active warmup period (if any)
-func change_warmup_state(activate_warmup: bool = true):
+func change_warmup_state(activate_warmup: bool = true) -> void:
+	# skip if called without valid warmup
+	if _is_warmup_valid() == false:
+		return
 	# start warmup and reset timer (if not already in warmup)
 	if activate_warmup and not is_in_warmup:
 		is_in_warmup = true
@@ -304,25 +302,34 @@ func _are_usages_remaining() -> bool:
 
 # method to determine whether ability is currently in the cooldown state
 func _is_cooldown_active() -> bool:
-	# if cooldown isn't used, cooldown is never active
-	var is_cooldown_enabled = (ability_cooldown > 0.0)
 	# if cooldown is used, check whether ability is in cooldown
-	if is_cooldown_enabled:
+	if _is_cooldown_valid():
 		return is_in_cooldown
 	else:
 		return false
-	
+
+
+# method to determine whether ability uses a cooldown
+func _is_cooldown_valid() -> bool:
+	# if cooldown isn't used, cooldown is never active
+	var is_cooldown_enabled = (ability_cooldown > 0.0)
+	return is_cooldown_enabled
 
 
 # method to determine whether ability is currently in the warmup state
 func _is_warmup_active() -> bool:
-	# if warmup isn't used, warmup  is never active
-	var is_warmup_enabled = (ability_warmup > 0.0)
 	# if warmup  is used, check whether ability is in warmup 
-	if is_warmup_enabled:
+	if _is_warmup_active():
 		return is_in_warmup
 	else:
 		return false
+	
+
+# method to determine whether ability uses a warmup
+func _is_warmup_valid() -> bool:
+	# if warmup isn't used, warmup  is never active
+	var is_warmup_enabled = (ability_warmup > 0.0)
+	return is_warmup_enabled
 
 
 ## after conclusion of cooldown period
