@@ -37,12 +37,10 @@ class_name AbilityController
 # for ability warmup animations
 # only emitted if 'ability_warmup' is positive
 # warmup_progress is the % of warmup completed
-# (this value can for ui elements and animations)
 signal ability_warmup_active(warmup_progress)
 # for ui elements and ability cooldown animations
 # only emitted if 'ability_cooldown' is positive
 # cooldown_progress is the % of warmup completed
-# (this value can for ui elements and animations)
 signal ability_cooldown_active(cooldown_progress)
 # indicates that the ability is preparing to fire
 # only emitted if 'ability_warmup' is positive
@@ -63,17 +61,29 @@ signal ability_warmup_finished()
 # only emitted if 'ability_cooldown' is positive
 # warning-ignore:unused_signal
 signal ability_cooldown_finished()
+
+# emitted when ability no longer has enough usages remaining to spend
+# only emitted after the ability spends usages and reaches this point
+signal ability_usages_depleted()
+# emitted when ability completely refills usages
+# only emitted after the refresh timer refills usages and reaches this point
+signal ability_usages_full()
 # emitted alongside the 'activate_ability' signal
 # useful for ui elements to track usage remaining
-# only emitted if 'max_usages' property is nil or positive
+# only emitted if 'max_usages' property is positive
+# will be emitted even if 'usages_refresh_amount' is nil
 # warning-ignore:unused_signal
-signal ability_usage_spent(uses_remaining)
+signal ability_usage_spent(uses_remaining, uses_spent)
 # emitted when a usage is refreshed, for ui elements
 # only emitted if 'refresh_usages_time' and 'usages_refresh_amount' are valid
 # 'uses_refreshed' value will be equal to 'usages_refresh_amount' unless the
 # number of usages to be refreshed would take the usages over the maximum
 # warning-ignore:unused_signal
-signal ability_usage_refreshed(uses_refreshed)
+signal ability_usage_refreshed(uses_remaining, uses_refreshed)
+# for ui elements and ability usage refreshing animations
+# only emits if 'refresh_usages_time' > 0.0, and 'infinite_usages' == false
+# cooldown_progress is the % of refresh completed
+signal ability_refresh_active(refresh_progress)
 
 # signal for indicating an activation would have happened, but a specific
 # abilityController condition blocked it activating
@@ -109,34 +119,60 @@ enum REFRESH_PAUSE {
 	IF_NOT_NIL,
 	}
 
+# disable when finished
+# for dev logging
+const VERBOSE_LOGGING := false
+const SCRIPT_NAME := "AbilityController"
+
+# the minimum number of usages an ability can have
+# handled in 'change_usages' method as a minimum floor/clamp
+# defaults to 0, setting to negative may have unintended behaviour
+const MINIMUM_USAGES := 0
+
+# easy flag for disabling cooldown features
+export(bool) var enable_cooldown := true
+# how long (in frames) before the ability can fire again
+# attempted activations are prevented whilst cooldown is active
+# note: when considering multiple usage timings, cooldown applies on every use
+# set nil to disable
+export(float, 0.0, 600.0) var ability_cooldown = 0.5
+
+# easy flag for disabling warmup features
+export(bool) var enable_warmup := true
 # how long (in frames) it takes for the ability to fire
 # this applies after input is confirmed by default, and all other input or
 # attempted activations are prevented whilst an activation is in the queue
 # (applying a long warmup will slow ability resolution)
 # note: when considering multiple usage timings, warmup applies on every use
 # set nil to disable
-export(float, 0.0, 20.0) var ability_warmup = 0.0
-# how long (in frames) before the ability can fire again
-# attempted activations are prevented whilst cooldown is active
-# note: when considering multiple usage timings, cooldown applies on every use
-# set nil to disable
-export(float, 0.0, 600.0) var ability_cooldown = 0.0
+export(float, 0.0, 20.0) var ability_warmup = 0.25
 
 # abilities can have a finite number of uses; each activation consumes a set
 # amount of uses and an ability can no longer activate once usages are consumed
 # uses can be restored by signal (public method), or on a fixed duration
 # (ability usage properties below)
 
-# the chosen refresh setting (see the REFRESH_PAUSE enum for detail)
-export(REFRESH_PAUSE) var refresh_pause_mode := REFRESH_PAUSE.NEVER
+# if set true, all usage and refresh behaviour is skipped
+export(bool) var infinite_usages := true
+# if set true, current usages equal max usages on _ready() call
+export(bool) var start_at_full_usages := true
 # max_usages is the total number of uses the ability has
 # abilities start at their maximum number of uses by default
 # set nil to disable the ability
-# set negative to give the ability unlimited uses
-export(int, -1, 100) var max_usages = -1
+export(int, 0, 100) var max_usages = 0
 # how many uses of the ability are consumed on each activation
+# given value is inverted when provided to the 'change_usages' method
+# e.g. 1 becomes -1, 5 becomes -5
 # set nil to prevent the ability consuming uses on activation
-export(int, 0, 100) var usages_consumed_on_activation = 1
+export(int, 0, 100) var usages_cost = 1
+# if disabled prevents all refresh timer behaviour
+export(bool) var usages_refreshed_over_time := true
+# how many usages are refreshed when the use_refresh_time is exceed
+# usages refreshed are capped at maximum usages
+# set nil to prevent usage refresh
+export(int, 0, 100) var usages_refresh_amount = 1
+# the chosen refresh setting (see the REFRESH_PAUSE enum for detail)
+export(REFRESH_PAUSE) var refresh_pause_mode := REFRESH_PAUSE.NEVER
 # how long (in frames) before an ability regains a set number of uses
 # set nil to prevent usage refresh
 # if current usages >= maximum uses, the refresh timer is not checked
@@ -147,10 +183,6 @@ export(float, 0.0, 100.0) var refresh_usages_time = 1.0
 # this property is useful if you want a delay for refresh time whenever
 # the condition for REFRESH_PAUSE is met
 export(float, 0, 10.0) var refresh_delay_time = 0.0
-# how many usages are refreshed when the use_refresh_time is exceed
-# usages refreshed are capped at maximum usages
-# set nil to prevent usage refresh
-export(int, 0, 100) var usages_refresh_amount = 1
 
 # ability state trackers
 var is_in_cooldown := false
@@ -161,11 +193,13 @@ var frames_since_cooldown_started := 0.0
 var frames_since_warmup_started := 0.0
 
 # set to max usages on ready
-# if negative, usages are infinite
-var current_usages := -1
+var current_usages := 0
 
 # track whether refresh timer should be counting
-var ability_usages_can_refresh := false
+# this isn't set or unset by abilityController; option to set from elsewhere
+var ability_usages_can_refresh := true
+# track if refresh delay is active
+var ability_usage_refresh_delayed := false
 
 # track how long since refresh timer started, for purpose of refreshing usages
 var frames_since_refresh_started := 0.0
@@ -177,22 +211,25 @@ var frames_since_delay_started := 0.0
 
 # virtual methods
 
+
 func _ready():
-#	ACTIVATION.INPUT_ACTIVATED
-#	ACTIVATION.INPUT_CONFIRMED_HOLD
-#	ACTIVATION.INPUT_CONFIRMED_PRESS
-#	ACTIVATION.INPUT_TOGGLED
-#	ACTIVATION.CONTINUOUS
-#	ACTIVATION.ON_INTERVAL
-#	ACTIVATION.ON_SIGNAL
-	pass
-	# need to connect signals?
+	# set usages to max at first, if allowed
+	if start_at_full_usages:
+		# force usages update for ui elements
+		change_usages(max_usages, true)
 
 
 func _process(arg_delta):
 	# accumulate delta trackers
-	# ability cooldown
-	if is_in_cooldown:
+	_process_cooldown_time(arg_delta)
+	_process_warmup_time(arg_delta)
+	_process_refresh_time(arg_delta)
+	_process_refresh_delay(arg_delta)
+
+
+func _process_cooldown_time(arg_delta):
+	# ability cooldown processing immediately skipped if invalid or inactive
+	if _is_cooldown_active():
 		frames_since_cooldown_started += arg_delta
 		# if exceed the cooldown length, end cooldown
 		if frames_since_cooldown_started > ability_cooldown:
@@ -204,8 +241,11 @@ func _process(arg_delta):
 					(frames_since_cooldown_started/ability_cooldown),
 					0.0, 1.0)
 			emit_signal("ability_cooldown_active", cooldown_completed)
-	# ability warmup
-	if is_in_warmup:
+
+
+func _process_warmup_time(arg_delta):
+	# ability warmup processing immediately skipped if invalid or inactive
+	if _is_warmup_active():
 		frames_since_warmup_started += arg_delta
 		# if exceed the warmup length, end warmup
 		if frames_since_warmup_started > ability_warmup:
@@ -218,14 +258,70 @@ func _process(arg_delta):
 					0.0, 1.0)
 			emit_signal("ability_warmup_active", warmup_completed)
 
+
+func _process_refresh_time(arg_delta):
+	# ability refresh processing immediately skipped if invalid or inactive
+	if is_refresh_valid():
+		frames_since_refresh_started += arg_delta
+		# if exceed the refresh period, restore usages
+		if frames_since_refresh_started > refresh_usages_time:
+			change_usages(usages_refresh_amount)
+			# new refresh so start over
+			frames_since_refresh_started = 0.0
+		# else, track refresh progress
+		else:
+			# pass along %done for ui elements and animations
+			var refresh_completed = clamp(\
+					(frames_since_refresh_started/refresh_usages_time),
+					0.0, 1.0)
+			emit_signal("ability_refresh_active", refresh_completed)
+
+
+# temporary/placeholder
+func _process_refresh_delay(arg_delta):
+	# refresh delay processing immediately skipped if invalid or inactive
+	pass
+	arg_delta = arg_delta
+	# refresh delay does not have a % done signal like cd/wm/rfrsh
+
+
 ##############################################################################
 
 # public methods
 
 
+# check if ability refresh timer can count
+func is_refresh_valid() -> bool:
+	# skip if not using usages
+	if infinite_usages:
+		return false
+	# public usage flag must be set
+	# export flag must be set
+	# current usages must be less than maximum usages
+	# max usages cannot be nil
+	if ability_usages_can_refresh\
+	and usages_refreshed_over_time\
+	and current_usages < max_usages\
+	and max_usages > MINIMUM_USAGES:
+		return true
+	else:
+		# disabled logging (even verbose) due to method call within _process
+		# (makes excessive print calls)
+#		GlobalDebug.log_error(SCRIPT_NAME, "is_refresh_valid",
+#				"refresh status log = {1}/{2}/{3}/{4}".format({
+#					"1": ability_usages_can_refresh,
+#					"2": usages_refreshed_over_time,
+#					"3": (current_usages < max_usages),
+#					"4": (max_usages > MINIMUM_USAGES),
+#				}))
+		return false
+
+
 # shadowed from activation controller to check conditions before activation
 # ability controller will check warmup, cooldown, and usages, before it
 # actually activates the ability
+# activate within abilityController is a conditional check and triggers
+# the warmup state before calling the actual activation
 func activate():
 	# check conditions before activating
 	if not _is_warmup_active()\
@@ -235,19 +331,51 @@ func activate():
 		if ability_warmup > 0.0:
 			change_warmup_state(true)
 		else:
-			activate_with_cooldown()
+			activate_no_warmup()
 
 
-# precursor to calling the _call_ability method
-# to handle cooldowns
-func activate_with_cooldown():
+# abilityController precursor to calling the _call_ability method
+# can be manually called to forcibly skip warmup behaviour
+func activate_no_warmup():
+	# activate with cooldown and track usages spent
 	change_cooldown_state(true)
-	# activate
+	# usage cost value always inverted
+	change_usages(-usages_cost)
 	_call_ability()
 
 
-func change_usages(usage_change: int):
-	usage_change = usage_change
+# adjust the current number of ability usages
+# provide with positive value to increase usages, or negative to decrease
+# if force_update_signal is set true, the 'ability_usage_refreshed' signal
+# will be sent (even if conditions for it to send weren't met)
+# this is useful for initial ui setup (call change_usages(max_usages, true))
+func change_usages(usage_change: int, force_update_signal: bool = false):
+	# skip if not using usages
+	if infinite_usages:
+		return
+	# track usages before change so can emit correct signal
+	var initial_usages = current_usages
+	# else adjust the current usages within bounds
+	current_usages =\
+			int(clamp(current_usages+usage_change,
+			MINIMUM_USAGES,
+			max_usages))
+	if current_usages < initial_usages:
+		emit_signal("ability_usage_spent", current_usages, usage_change)
+		# if this was the last time the cost could be spent
+		if initial_usages >= usages_cost\
+		and current_usages < usages_cost:
+			emit_signal("ability_usages_depleted")
+	elif current_usages > initial_usages:
+		emit_signal("ability_usage_refreshed", current_usages, usage_change)
+		# if overflowed and was clamped to max
+		if initial_usages < max_usages\
+		and current_usages == max_usages:
+			# refresh should be stopped and reset if max usages are reached
+			frames_since_refresh_started = 0.0
+			emit_signal("ability_usages_full")
+	if force_update_signal:
+		emit_signal("ability_usage_refreshed", current_usages, usage_change)
 
 
 # start a new cooldown period or end an active cooldown period
@@ -267,6 +395,36 @@ func change_cooldown_state(activate_cooldown: bool = true) -> void:
 	elif not activate_cooldown and is_in_cooldown:
 		is_in_cooldown = activate_cooldown
 		emit_signal("ability_cooldown_finished")
+#
+#	# whenever cooldown or warmup state is changed,
+#	# check the refresh pause state
+#	recheck_refresh_pause_state()
+#
+#
+#func recheck_refresh_pause_state():
+#	var refresh_is_valid_state := true
+#	# if cooldown is on then ON_COOLDOWN or IN_USE modes for REFRESH_PAUSE
+#	# cause refresh pause; if using refresh delay this will restart the delay
+#	if refresh_pause_mode == REFRESH_PAUSE.ON_COOLDOWN\
+#	or refresh_pause_mode == REFRESH_PAUSE.IN_USE:
+#		if is_in_cooldown:
+#			refresh_is_valid_state = false
+#	# if warmup is on then ON_WARMUP or IN_USE modes for REFRESH_PAUSE
+#	# cause refresh pause; if using refresh delay this will restart the delay
+#	if refresh_pause_mode == REFRESH_PAUSE.ON_WARMUP\
+#	or refresh_pause_mode == REFRESH_PAUSE.IN_USE:
+#		if is_in_warmup:
+#			refresh_is_valid_state = false
+#	# if a refresh blocked state (see above) is met,
+#	# refresh is blocked and delay is called if it wasn't already active
+#	ability_usages_can_refresh = refresh_is_valid_state
+#	if infinite_usages:
+#		return false
+#
+#	#temp
+#	if refresh_pause_mode == REFRESH_PAUSE.ON_WARMUP\
+#	or refresh_pause_mode == REFRESH_PAUSE.IN_USE:
+#		ability_usages_can_refresh = false
 
 
 # start a new warmup period
@@ -287,7 +445,7 @@ func change_warmup_state(activate_warmup: bool = true) -> void:
 		is_in_warmup = false
 		emit_signal("ability_warmup_finished")
 		# warmup always proceeds to activation
-		activate_with_cooldown()
+		activate_no_warmup()
 
 
 ##############################################################################
@@ -297,7 +455,12 @@ func change_warmup_state(activate_warmup: bool = true) -> void:
 
 # method to determine whether ability has usages remaining
 func _are_usages_remaining() -> bool:
-	return true
+	if infinite_usages:
+		return true
+	if current_usages >= usages_cost:
+		return true
+	else:
+		return false
 
 
 # method to determine whether ability is currently in the cooldown state
@@ -312,14 +475,17 @@ func _is_cooldown_active() -> bool:
 # method to determine whether ability uses a cooldown
 func _is_cooldown_valid() -> bool:
 	# if cooldown isn't used, cooldown is never active
-	var is_cooldown_enabled = (ability_cooldown > 0.0)
-	return is_cooldown_enabled
+	if enable_cooldown == false\
+	or (ability_cooldown == 0.0):
+		return false
+	else:
+		return true
 
 
 # method to determine whether ability is currently in the warmup state
 func _is_warmup_active() -> bool:
-	# if warmup  is used, check whether ability is in warmup 
-	if _is_warmup_active():
+	# if warmup is used, check whether ability is in warmup 
+	if _is_warmup_valid():
 		return is_in_warmup
 	else:
 		return false
@@ -328,8 +494,11 @@ func _is_warmup_active() -> bool:
 # method to determine whether ability uses a warmup
 func _is_warmup_valid() -> bool:
 	# if warmup isn't used, warmup  is never active
-	var is_warmup_enabled = (ability_warmup > 0.0)
-	return is_warmup_enabled
+	if enable_warmup == false\
+	or (ability_warmup == 0.0):
+		return false
+	else:
+		return true
 
 
 ## after conclusion of cooldown period
