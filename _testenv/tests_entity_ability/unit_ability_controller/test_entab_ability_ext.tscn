@@ -24,8 +24,11 @@ position = Vector2( 960, 540 )
 script = ExtResource( 5 )
 use_ability_action = "ui_accept"
 target_clear_action = "ui_cancel"
-ability_warmup = 0.75
-ability_cooldown = 2.0
+min_hold_duration = 2.0
+forced_activation_interval = 1.0
+infinite_usages = false
+max_usages = 2
+refresh_usages_time = 4.0
 
 [node name="EntityAbilityTargeter" type="Area2D" parent="CenterOfScreen/AbilityController"]
 position = Vector2( -960, -540 )
@@ -78,6 +81,11 @@ texture = ExtResource( 3 )
 [connection signal="ability_cooldown_active" from="CenterOfScreen/AbilityController" to="." method="_on_AbilityController_ability_cooldown_active"]
 [connection signal="ability_cooldown_finished" from="CenterOfScreen/AbilityController" to="." method="_on_AbilityController_ability_cooldown_finished"]
 [connection signal="ability_cooldown_started" from="CenterOfScreen/AbilityController" to="." method="_on_AbilityController_ability_cooldown_started"]
+[connection signal="ability_refresh_active" from="CenterOfScreen/AbilityController" to="." method="_on_AbilityController_ability_refresh_active"]
+[connection signal="ability_usage_refreshed" from="CenterOfScreen/AbilityController" to="." method="_on_AbilityController_ability_usage_refreshed"]
+[connection signal="ability_usage_spent" from="CenterOfScreen/AbilityController" to="." method="_on_AbilityController_ability_usage_spent"]
+[connection signal="ability_usages_depleted" from="CenterOfScreen/AbilityController" to="." method="_on_AbilityController_ability_usages_depleted"]
+[connection signal="ability_usages_full" from="CenterOfScreen/AbilityController" to="." method="_on_AbilityController_ability_usages_full"]
 [connection signal="ability_warmup_active" from="CenterOfScreen/AbilityController" to="." method="_on_AbilityController_ability_warmup_active"]
 [connection signal="ability_warmup_finished" from="CenterOfScreen/AbilityController" to="." method="_on_AbilityController_ability_warmup_finished"]
 [connection signal="ability_warmup_started" from="CenterOfScreen/AbilityController" to="." method="_on_AbilityController_ability_warmup_started"]
