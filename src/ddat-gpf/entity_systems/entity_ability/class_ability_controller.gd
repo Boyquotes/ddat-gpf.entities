@@ -10,26 +10,6 @@ class_name AbilityController
 # have a warmup before activating, a cooldown after activating, or a set
 # number of uses before they go on a longer cooldown.
 
-#//TODO
-# property for activation controller that prevents activation if ability is
-# waiting (i.e. if cooldown is waiting or warmup is going) - perhaps just
-# as an abilityController shadowed method?
-
-#//TODO
-# need a property that prevents delta accumulation (see below) whilst the
-# ability isn't ready (also prevent confirmed_press)
-# - INPUT_CONFIRMED_PRESS activation mode allows the priming/initial input
-#	even whilst the ability is on warmup/coodlwon
-#	same applies for INPUT_CONFIRMED_HOLD, you can start priming a new input
-#	same applies for INPUT_MINIMUM_HOLD
-#	same applies for ON_INTERVAL
-#	if the accumulation triggers activation whilst ability is on cooldown,
-#	the activation is discarded - should it queue?
-
-#//TODO/REVIEW
-#	warmup and cooldown currently work with INPUT_CONFIRMED_HOLD,
-#	INPUT_MINIMUM_HOLD, INPUT_WHILST_HELD < is this desired behaviour?
-
 ##############################################################################
 
 # properties (signals, enums, constants, exports, variables, onreadys)
@@ -197,6 +177,7 @@ var current_usages := 0
 
 # track whether refresh timer should be counting
 # this isn't set or unset by abilityController; option to set from elsewhere
+# abilityController tracks if refresh can process w/'is_refresh_valid' method
 var ability_usages_can_refresh := true
 # track if refresh delay is active
 var ability_usage_refresh_delayed := false
