@@ -10,6 +10,10 @@ class_name ActivationController
 # On fulfilling the activation mode condition the controller emits a signal
 # that can be tied to custom behaviour in child nodes.
 
+#//TODO
+#	add minimum hold duration delay to input whilst held? (constant activation
+#	when the input has been held for a minimum duration)
+
 ##############################################################################
 
 # properties (signals, enums, constants, exports, variables, onreadys)
