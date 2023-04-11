@@ -125,7 +125,7 @@ const VERBOSE_LOGGING := false
 const SCRIPT_NAME := "AbilityController"
 
 # the minimum number of usages an ability can have
-# handled in 'change_usages' method as a minimum floor/clamp
+# handled in 'change_ability_usages' method as a minimum floor/clamp
 # defaults to 0, setting to negative may have unintended behaviour
 const MINIMUM_USAGES := 0
 
@@ -161,7 +161,7 @@ export(bool) var start_at_full_usages := true
 # set nil to disable the ability
 export(int, 0, 100) var max_usages = 0
 # how many uses of the ability are consumed on each activation
-# given value is inverted when provided to the 'change_usages' method
+# given value is inverted when provided to the 'change_ability_usages' method
 # e.g. 1 becomes -1, 5 becomes -5
 # set nil to prevent the ability consuming uses on activation
 export(int, 0, 100) var usages_cost = 1
@@ -216,7 +216,7 @@ func _ready():
 	# set usages to max at first, if allowed
 	if start_at_full_usages:
 		# force usages update for ui elements
-		change_usages(max_usages, true)
+		change_ability_usages(max_usages, true)
 
 
 func _process(arg_delta):
@@ -229,7 +229,7 @@ func _process(arg_delta):
 
 func _process_cooldown_time(arg_delta):
 	# ability cooldown processing immediately skipped if invalid or inactive
-	if _is_cooldown_active():
+	if is_cooldown_active():
 		frames_since_cooldown_started += arg_delta
 		# if exceed the cooldown length, end cooldown
 		if frames_since_cooldown_started > ability_cooldown:
@@ -245,7 +245,7 @@ func _process_cooldown_time(arg_delta):
 
 func _process_warmup_time(arg_delta):
 	# ability warmup processing immediately skipped if invalid or inactive
-	if _is_warmup_active():
+	if is_warmup_active():
 		frames_since_warmup_started += arg_delta
 		# if exceed the warmup length, end warmup
 		if frames_since_warmup_started > ability_warmup:
@@ -265,7 +265,7 @@ func _process_refresh_time(arg_delta):
 		frames_since_refresh_started += arg_delta
 		# if exceed the refresh period, restore usages
 		if frames_since_refresh_started > refresh_usages_time:
-			change_usages(usages_refresh_amount)
+			change_ability_usages(usages_refresh_amount)
 			# new refresh so start over
 			frames_since_refresh_started = 0.0
 		# else, track refresh progress
@@ -290,33 +290,6 @@ func _process_refresh_delay(arg_delta):
 # public methods
 
 
-# check if ability refresh timer can count
-func is_refresh_valid() -> bool:
-	# skip if not using usages
-	if infinite_usages:
-		return false
-	# public usage flag must be set
-	# export flag must be set
-	# current usages must be less than maximum usages
-	# max usages cannot be nil
-	if ability_usages_can_refresh\
-	and usages_refreshed_over_time\
-	and current_usages < max_usages\
-	and max_usages > MINIMUM_USAGES:
-		return true
-	else:
-		# disabled logging (even verbose) due to method call within _process
-		# (makes excessive print calls)
-#		GlobalDebug.log_error(SCRIPT_NAME, "is_refresh_valid",
-#				"refresh status log = {1}/{2}/{3}/{4}".format({
-#					"1": ability_usages_can_refresh,
-#					"2": usages_refreshed_over_time,
-#					"3": (current_usages < max_usages),
-#					"4": (max_usages > MINIMUM_USAGES),
-#				}))
-		return false
-
-
 # shadowed from activation controller to check conditions before activation
 # ability controller will check warmup, cooldown, and usages, before it
 # actually activates the ability
@@ -324,32 +297,45 @@ func is_refresh_valid() -> bool:
 # the warmup state before calling the actual activation
 func activate():
 	# check conditions before activating
-	if not _is_warmup_active()\
-	and not _is_cooldown_active()\
-	and _are_usages_remaining():
-		# call ability if no warmup, else 
-		if ability_warmup > 0.0:
+	if not is_warmup_active()\
+	and not is_cooldown_active()\
+	and are_usages_remaining():
+		# if warmup is used but not active, activate it
+		if is_warmup_valid():
 			change_warmup_state(true)
+		# otherwise skip warmup and carry on
 		else:
-			activate_no_warmup()
+			activate_after_warmup()
 
 
 # abilityController precursor to calling the _call_ability method
 # can be manually called to forcibly skip warmup behaviour
-func activate_no_warmup():
+func activate_after_warmup():
 	# activate with cooldown and track usages spent
 	change_cooldown_state(true)
 	# usage cost value always inverted
-	change_usages(-usages_cost)
+	change_ability_usages(-usages_cost)
 	_call_ability()
+
+
+# method to determine whether ability has usages remaining
+func are_usages_remaining() -> bool:
+	if infinite_usages:
+		return true
+	if current_usages >= usages_cost:
+		return true
+	else:
+		return false
 
 
 # adjust the current number of ability usages
 # provide with positive value to increase usages, or negative to decrease
 # if force_update_signal is set true, the 'ability_usage_refreshed' signal
 # will be sent (even if conditions for it to send weren't met)
-# this is useful for initial ui setup (call change_usages(max_usages, true))
-func change_usages(usage_change: int, force_update_signal: bool = false):
+# this is useful for ui setup (call change_ability_usages(max_usages, true))
+func change_ability_usages(
+		usage_change: int,
+		force_update_signal: bool = false):
 	# skip if not using usages
 	if infinite_usages:
 		return
@@ -378,12 +364,13 @@ func change_usages(usage_change: int, force_update_signal: bool = false):
 		emit_signal("ability_usage_refreshed", current_usages, usage_change)
 
 
+
 # start a new cooldown period or end an active cooldown period
 # if 'activate_cooldown' is true, starts cooldown (if not already active)
 # if 'activate_cooldown' is false, ends the active cooldown period (if any)
 func change_cooldown_state(activate_cooldown: bool = true) -> void:
 	# skip if called without valid cooldown
-	if _is_cooldown_valid() == false:
+	if is_cooldown_valid() == false:
 		return
 	# start cooldown and reset timer (if not already in cooldown)
 	if activate_cooldown and not is_in_cooldown:
@@ -432,7 +419,7 @@ func change_cooldown_state(activate_cooldown: bool = true) -> void:
 # if 'activate_warmup' is false, ends the active warmup period (if any)
 func change_warmup_state(activate_warmup: bool = true) -> void:
 	# skip if called without valid warmup
-	if _is_warmup_valid() == false:
+	if is_warmup_valid() == false:
 		return
 	# start warmup and reset timer (if not already in warmup)
 	if activate_warmup and not is_in_warmup:
@@ -445,35 +432,20 @@ func change_warmup_state(activate_warmup: bool = true) -> void:
 		is_in_warmup = false
 		emit_signal("ability_warmup_finished")
 		# warmup always proceeds to activation
-		activate_no_warmup()
-
-
-##############################################################################
-
-# private methods
-
-
-# method to determine whether ability has usages remaining
-func _are_usages_remaining() -> bool:
-	if infinite_usages:
-		return true
-	if current_usages >= usages_cost:
-		return true
-	else:
-		return false
+		activate_after_warmup()
 
 
 # method to determine whether ability is currently in the cooldown state
-func _is_cooldown_active() -> bool:
+func is_cooldown_active() -> bool:
 	# if cooldown is used, check whether ability is in cooldown
-	if _is_cooldown_valid():
+	if is_cooldown_valid():
 		return is_in_cooldown
 	else:
 		return false
 
 
 # method to determine whether ability uses a cooldown
-func _is_cooldown_valid() -> bool:
+func is_cooldown_valid() -> bool:
 	# if cooldown isn't used, cooldown is never active
 	if enable_cooldown == false\
 	or (ability_cooldown == 0.0):
@@ -482,23 +454,55 @@ func _is_cooldown_valid() -> bool:
 		return true
 
 
+# check if ability refresh timer can count
+func is_refresh_valid() -> bool:
+	# skip if not using usages
+	if infinite_usages:
+		return false
+	# public usage flag must be set
+	# export flag must be set
+	# current usages must be less than maximum usages
+	# max usages cannot be nil
+	if ability_usages_can_refresh\
+	and usages_refreshed_over_time\
+	and current_usages < max_usages\
+	and max_usages > MINIMUM_USAGES:
+		return true
+	else:
+		# disabled logging (even verbose) due to method call within _process
+		# (makes excessive print calls)
+#		GlobalDebug.log_error(SCRIPT_NAME, "is_refresh_valid",
+#				"refresh status log = {1}/{2}/{3}/{4}".format({
+#					"1": ability_usages_can_refresh,
+#					"2": usages_refreshed_over_time,
+#					"3": (current_usages < max_usages),
+#					"4": (max_usages > MINIMUM_USAGES),
+#				}))
+		return false
+
+
 # method to determine whether ability is currently in the warmup state
-func _is_warmup_active() -> bool:
+func is_warmup_active() -> bool:
 	# if warmup is used, check whether ability is in warmup 
-	if _is_warmup_valid():
+	if is_warmup_valid():
 		return is_in_warmup
 	else:
 		return false
 	
 
 # method to determine whether ability uses a warmup
-func _is_warmup_valid() -> bool:
+func is_warmup_valid() -> bool:
 	# if warmup isn't used, warmup  is never active
 	if enable_warmup == false\
 	or (ability_warmup == 0.0):
 		return false
 	else:
 		return true
+
+
+##############################################################################
+
+# private methods
 
 
 ## after conclusion of cooldown period
