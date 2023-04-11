@@ -316,9 +316,16 @@ func _process_refresh_delay(arg_delta):
 # the warmup state before calling the actual activation
 func activate():
 	# check conditions before activating
-	if not is_warmup_active()\
-	and not is_cooldown_active()\
-	and are_usages_remaining():
+	# only one failure signal will be emitted, and they are processed in the
+	# following order; warmup -> cooldown -> usages.
+	if is_warmup_active():
+		emit_signal("failed_activation", ACTIVATION_ERROR.ERR_ON_WARMUP)
+	elif is_cooldown_active():
+		emit_signal("failed_activation", ACTIVATION_ERROR.ERR_ON_COOLDOWN)
+	elif not are_usages_remaining():
+		emit_signal("failed_activation", ACTIVATION_ERROR.ERR_NO_USES_LEFT)
+	# if we get here we passed all conditions
+	else:
 		# if warmup is used but not active, activate it
 		if is_warmup_valid():
 			change_warmup_state(true)
