@@ -181,7 +181,7 @@ func _process(arg_delta):
 		frames_since_cooldown_started += arg_delta
 		# if exceed the cooldown length, end cooldown
 		if frames_since_cooldown_started > ability_cooldown:
-			_on_cooldown_expired()
+			change_cooldown_state(false)
 		# else, track cooldown
 		else:
 			# pass along %done for ui elements and animations
@@ -194,7 +194,7 @@ func _process(arg_delta):
 		frames_since_warmup_started += arg_delta
 		# if exceed the warmup length, end warmup
 		if frames_since_warmup_started > ability_warmup:
-			_on_warmup_expired()
+			change_warmup_state(false)
 		# else, track warmup
 		else:
 			# pass along %done for ui elements and animations
@@ -218,7 +218,7 @@ func activate():
 	and _are_usages_remaining():
 		# call ability if no warmup, else 
 		if ability_warmup > 0.0:
-			start_warmup()
+			change_warmup_state(true)
 		else:
 			activate_with_cooldown()
 
@@ -226,7 +226,7 @@ func activate():
 # precursor to calling the _call_ability method
 # to handle cooldowns
 func activate_with_cooldown():
-	start_cooldown()
+	change_cooldown_state(true)
 	# activate
 	_call_ability()
 
@@ -235,22 +235,46 @@ func change_usages(usage_change: int):
 	usage_change = usage_change
 
 
-# start a new cooldown period
-func start_cooldown():
-	# start cooldown and reset timer
-	is_in_cooldown = true
-	frames_since_cooldown_started = 0.0
-	emit_signal("ability_cooldown_active", 0.0)
-	emit_signal("ability_cooldown_started")
+# start a new cooldown period or end an active cooldown period
+# if 'activate_cooldown' is true, starts cooldown (if not already active)
+# if 'activate_cooldown' is false, ends the active cooldown period (if any)
+func change_cooldown_state(activate_cooldown: bool = true):
+	# start cooldown and reset timer (if not already in cooldown)
+	if activate_cooldown and not is_in_cooldown:
+		is_in_cooldown = true
+		frames_since_cooldown_started = 0.0
+		emit_signal("ability_cooldown_active", 0.0)
+		emit_signal("ability_cooldown_started")
+	# end cooldown state
+	elif not activate_cooldown and is_in_cooldown:
+		is_in_cooldown = false
+		emit_signal("ability_cooldown_finished")
+	
+	#temp
+#	if refresh_pause_mode == REFRESH_PAUSE.ON_COOLDOWN\
+#	or refresh_pause_mode == REFRESH_PAUSE.IN_USE:
+#		ability_usages_can_refresh = false
+#	if refresh_pause_mode == REFRESH_PAUSE.ON_WARMUP\
+#	or refresh_pause_mode == REFRESH_PAUSE.IN_USE:
+#		ability_usages_can_refresh = false
 
 
 # start a new warmup period
-func start_warmup():
-	# start cooldown and reset timer
-	is_in_warmup = true
-	frames_since_warmup_started = 0.0
-	emit_signal("ability_warmup_active", 0.0)
-	emit_signal("ability_warmup_started")
+# if 'activate_warmup' is true, starts warmup (if not already active)
+# if 'activate_warmup' is false, ends the active warmup period (if any)
+func change_warmup_state(activate_warmup: bool = true):
+	# start warmup and reset timer (if not already in warmup)
+	if activate_warmup and not is_in_warmup:
+		is_in_warmup = true
+		frames_since_warmup_started = 0.0
+		emit_signal("ability_warmup_active", 0.0)
+		emit_signal("ability_warmup_started")
+	# end warmup state, automatically start cooldown
+	elif not activate_warmup and is_in_warmup:
+		is_in_warmup = false
+		emit_signal("ability_warmup_finished")
+		# warmup always proceeds to activation
+		activate_with_cooldown()
 
 
 ##############################################################################
@@ -286,18 +310,18 @@ func _is_warmup_active() -> bool:
 		return false
 
 
-# after conclusion of cooldown period
-func _on_cooldown_expired():
-	is_in_cooldown = false
-	emit_signal("ability_cooldown_finished")
+## after conclusion of cooldown period
+#func _on_cooldown_expired():
+#	is_in_cooldown = false
+#	emit_signal("ability_cooldown_finished")
 
 
-# after conclusion of warmup period
-func _on_warmup_expired():
-	is_in_warmup = false
-	emit_signal("ability_warmup_finished")
-	# warmup always proceeds to activation
-	activate_with_cooldown()
+## after conclusion of warmup period
+#func _on_warmup_expired():
+#	is_in_warmup = false
+#	emit_signal("ability_warmup_finished")
+#	# warmup always proceeds to activation
+#	activate_with_cooldown()
 
 
 ##############################################################################
