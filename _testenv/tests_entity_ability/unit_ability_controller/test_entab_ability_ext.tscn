@@ -1,13 +1,15 @@
-[gd_scene load_steps=9 format=2]
+[gd_scene load_steps=7 format=2]
 
 [ext_resource path="res://_testenv/tests_entity_ability/unit_ability_controller/test_entab_ability_ext.gd" type="Script" id=1]
 [ext_resource path="res://_dev/ddat_icon.png" type="Texture" id=2]
-[ext_resource path="res://_dev/icon.png" type="Texture" id=3]
-[ext_resource path="res://_testenv/tests_entity_ability/unit_ability_controller/test_entity_area_scene.tscn" type="PackedScene" id=4]
 [ext_resource path="res://src/ddat-gpf/entity_systems/entity_ability/class_ability_controller.gd" type="Script" id=5]
 [ext_resource path="res://src/ddat-gpf/entity_systems/entity_ability/class_ability_targeter.gd" type="Script" id=6]
-[ext_resource path="res://src/ddat-gpf/entity_systems/classes/class_entity_area.gd" type="Script" id=7]
-[ext_resource path="res://src/ddat-gpf/entity_systems/entity_extensions/class_entity_spawner.gd" type="Script" id=8]
+
+[sub_resource type="StyleBoxFlat" id=2]
+bg_color = Color( 0.6, 0.6, 0.6, 0.294118 )
+
+[sub_resource type="StyleBoxFlat" id=1]
+bg_color = Color( 0.6, 0.6, 0.6, 0.0980392 )
 
 [node name="EntityAbilityWeaponTest" type="Node2D"]
 script = ExtResource( 1 )
@@ -46,20 +48,6 @@ position = Vector2( 1200, 540 )
 scale = Vector2( 0.25, 0.25 )
 texture = ExtResource( 2 )
 
-[node name="EntitySpawner" type="Position2D" parent="CenterOfScreen/AbilityController"]
-script = ExtResource( 8 )
-entity_path = NodePath("EntityArea")
-entity_area_scene = ExtResource( 4 )
-
-[node name="EntityArea" type="Area2D" parent="CenterOfScreen/AbilityController/EntitySpawner"]
-visible = false
-script = ExtResource( 7 )
-
-[node name="Sprite" type="Sprite" parent="CenterOfScreen/AbilityController/EntitySpawner/EntityArea"]
-self_modulate = Color( 1, 0.27451, 0.313726, 1 )
-scale = Vector2( 2, 2 )
-texture = ExtResource( 3 )
-
 [node name="RotTargetLine" type="Line2D" parent="CenterOfScreen"]
 points = PoolVector2Array( 0, 0, 215, 0 )
 
@@ -68,23 +56,27 @@ margin_left = 124.0
 margin_top = 100.0
 margin_right = 164.0
 margin_bottom = 114.0
+rect_min_size = Vector2( 250, 125 )
 rect_scale = Vector2( 2, 2 )
+custom_styles/normal = SubResource( 2 )
 
 [node name="DebugHistoric" type="Label" parent="."]
 margin_left = 1442.0
 margin_top = 84.0
 margin_right = 1482.0
 margin_bottom = 98.0
-
-[node name="EnemyTest1" type="Sprite" parent="."]
-visible = false
-texture = ExtResource( 3 )
-
-[node name="EnemyTest2" type="Sprite" parent="."]
-visible = false
-texture = ExtResource( 3 )
+rect_min_size = Vector2( 450, 900 )
+custom_styles/normal = SubResource( 1 )
+clip_text = true
 
 [node name="Tween" type="Tween" parent="."]
+
+[node name="ClearDebugButton" type="Button" parent="."]
+margin_left = 78.0
+margin_top = 882.0
+margin_right = 90.0
+margin_bottom = 902.0
+text = "CLICK TO CLEAR DEBUG LOG"
 
 [connection signal="ability_cooldown_active" from="CenterOfScreen/AbilityController" to="." method="_on_AbilityController_ability_cooldown_active"]
 [connection signal="ability_cooldown_finished" from="CenterOfScreen/AbilityController" to="." method="_on_AbilityController_ability_cooldown_finished"]
@@ -98,7 +90,8 @@ texture = ExtResource( 3 )
 [connection signal="ability_warmup_finished" from="CenterOfScreen/AbilityController" to="." method="_on_AbilityController_ability_warmup_finished"]
 [connection signal="ability_warmup_started" from="CenterOfScreen/AbilityController" to="." method="_on_AbilityController_ability_warmup_started"]
 [connection signal="activate_ability" from="CenterOfScreen/AbilityController" to="." method="_on_AbilityController_activate_ability"]
-[connection signal="activate_ability" from="CenterOfScreen/AbilityController" to="CenterOfScreen/AbilityController/EntitySpawner" method="spawn"]
+[connection signal="failed_activation" from="CenterOfScreen/AbilityController" to="." method="_on_AbilityController_failed_activation"]
 [connection signal="refresh_delay_active" from="CenterOfScreen/AbilityController" to="." method="_on_AbilityController_refresh_delay_active"]
 [connection signal="refresh_delay_ended" from="CenterOfScreen/AbilityController" to="." method="_on_AbilityController_refresh_delay_ended"]
 [connection signal="refresh_delay_started" from="CenterOfScreen/AbilityController" to="." method="_on_AbilityController_refresh_delay_started"]
+[connection signal="pressed" from="ClearDebugButton" to="." method="_on_ClearDebugButton_pressed"]

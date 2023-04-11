@@ -17,6 +17,7 @@ var debug_special_messages = []
 
 onready var debug_label_active = $DebugActive
 onready var debug_label_historic = $DebugHistoric
+onready var clear_debug_button = $ClearDebugButton
 
 
 func _ready():
@@ -114,3 +115,21 @@ func _on_AbilityController_refresh_delay_ended():
 func _on_AbilityController_refresh_delay_started():
 	debug_special_messages.append("refresh delay started!")
 	update_debug_label()
+
+
+func _on_AbilityController_failed_activation(error_code):
+	var err_keys = AbilityController.ACTIVATION_ERROR.keys()
+	debug_special_messages.append("failed activation, error {x}".format({
+				"x": str(error_code)+" (ERR: {code})".format({
+				"code": err_keys[error_code]})
+	}))
+	update_debug_label()
+
+
+func _on_ClearDebugButton_pressed():
+	if debug_label_historic != null:
+		debug_special_messages = []
+		debug_label_historic.text = ""
+	clear_debug_button.release_focus()
+
+
