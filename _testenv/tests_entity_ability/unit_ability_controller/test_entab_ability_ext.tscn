@@ -28,7 +28,9 @@ min_hold_duration = 2.0
 forced_activation_interval = 1.0
 infinite_usages = false
 max_usages = 2
-refresh_usages_time = 4.0
+refresh_delay_mode = 1
+refresh_usages_time = 0.75
+refresh_delay_duration = 0.25
 
 [node name="EntityAbilityTargeter" type="Area2D" parent="CenterOfScreen/AbilityController"]
 position = Vector2( -960, -540 )
@@ -61,12 +63,18 @@ texture = ExtResource( 3 )
 [node name="RotTargetLine" type="Line2D" parent="CenterOfScreen"]
 points = PoolVector2Array( 0, 0, 215, 0 )
 
-[node name="DebugLabel" type="Label" parent="."]
-margin_left = 186.0
-margin_top = 155.0
-margin_right = 226.0
-margin_bottom = 169.0
+[node name="DebugActive" type="Label" parent="."]
+margin_left = 124.0
+margin_top = 100.0
+margin_right = 164.0
+margin_bottom = 114.0
 rect_scale = Vector2( 2, 2 )
+
+[node name="DebugHistoric" type="Label" parent="."]
+margin_left = 1442.0
+margin_top = 84.0
+margin_right = 1482.0
+margin_bottom = 98.0
 
 [node name="EnemyTest1" type="Sprite" parent="."]
 visible = false
@@ -91,3 +99,6 @@ texture = ExtResource( 3 )
 [connection signal="ability_warmup_started" from="CenterOfScreen/AbilityController" to="." method="_on_AbilityController_ability_warmup_started"]
 [connection signal="activate_ability" from="CenterOfScreen/AbilityController" to="." method="_on_AbilityController_activate_ability"]
 [connection signal="activate_ability" from="CenterOfScreen/AbilityController" to="CenterOfScreen/AbilityController/EntitySpawner" method="spawn"]
+[connection signal="refresh_delay_active" from="CenterOfScreen/AbilityController" to="." method="_on_AbilityController_refresh_delay_active"]
+[connection signal="refresh_delay_ended" from="CenterOfScreen/AbilityController" to="." method="_on_AbilityController_refresh_delay_ended"]
+[connection signal="refresh_delay_started" from="CenterOfScreen/AbilityController" to="." method="_on_AbilityController_refresh_delay_started"]

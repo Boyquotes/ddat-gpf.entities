@@ -10,10 +10,13 @@ var debug_value_tracker = {
 	"warmup_progress": 0.0,
 	"current_uses": 0,
 	"refresh_progress": 0.0,
+	"delay_progress": 0.0,
 }
 
+var debug_special_messages = []
 
-onready var debug_label = $DebugLabel
+onready var debug_label_active = $DebugActive
+onready var debug_label_historic = $DebugHistoric
 
 
 func _ready():
@@ -21,11 +24,18 @@ func _ready():
 
 
 func update_debug_label():
-	var debug_string = ""
+	#1
+	var debug_string_1 = ""
 	for key in debug_value_tracker:
-		debug_string += (str(key)+": "+str(debug_value_tracker[key])+"\n")
-	if debug_label != null:
-		debug_label.text = debug_string
+		debug_string_1 += (str(key)+": "+str(debug_value_tracker[key])+"\n")
+	if debug_label_active != null:
+		debug_label_active.text = debug_string_1
+	#2
+	var debug_string_2 = ""
+	for message_string in debug_special_messages:
+		debug_string_2 += str(message_string)+"\n"
+	if debug_label_historic != null:
+		debug_label_historic.text = debug_string_2
 
 func _on_AbilityController_activate_ability():
 	print("test activate")
@@ -61,8 +71,6 @@ func _on_AbilityController_ability_warmup_started():
 	update_debug_label()
 
 
-
-
 func _on_AbilityController_ability_refresh_active(refresh_progress):
 	debug_value_tracker["refresh_progress"] = refresh_progress
 #	debug_value_tracker["is_refresh_active"] = true
@@ -71,19 +79,38 @@ func _on_AbilityController_ability_refresh_active(refresh_progress):
 
 func _on_AbilityController_ability_usage_refreshed(uses_remaining, uses_refreshed):
 	debug_value_tracker["current_uses"] = uses_remaining
-	print("restored {x} uses!".format({"x": uses_refreshed}))
+	debug_special_messages.append(\
+			"restored {x} uses!".format({"x": uses_refreshed}))
 	update_debug_label()
 
 
 func _on_AbilityController_ability_usage_spent(uses_remaining, uses_spent):
 	debug_value_tracker["current_uses"] = uses_remaining
-	print("spent {x} uses!".format({"x": uses_spent}))
+	debug_special_messages.append(\
+			"spent {x} uses!".format({"x": uses_spent}))
 	update_debug_label()
 
 
 func _on_AbilityController_ability_usages_depleted():
-	print("usages depleted!")
+	debug_special_messages.append("usages depleted!")
+	update_debug_label()
 
 
 func _on_AbilityController_ability_usages_full():
-	print("usages full!")
+	debug_special_messages.append("usages full!")
+	update_debug_label()
+
+
+func _on_AbilityController_refresh_delay_active(delay_progress):
+	debug_value_tracker["delay_progress"] = delay_progress
+	update_debug_label()
+
+
+func _on_AbilityController_refresh_delay_ended():
+	debug_special_messages.append("refresh delay ended!")
+	update_debug_label()
+
+
+func _on_AbilityController_refresh_delay_started():
+	debug_special_messages.append("refresh delay started!")
+	update_debug_label()
