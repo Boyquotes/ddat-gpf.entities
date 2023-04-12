@@ -53,20 +53,6 @@ var forced_properties_on_inactive = {}
 
 ##############################################################################
 
-#//TODO
-# method to set default properties
-# method to change active/inactive state (and force properties)
-# method to remove an object from the objectPool
-# method to spawn by instancing
-# spawn method arguments that can override forced/default properties
-
-# older notes
-# behaviour
-# on instance:
-#	which signals determine an object turning inactive or active
-#	connect correct signals to the pool
-#	which properties should be set/unset when the object turns inactive 
-
 # virtual methods
 
 

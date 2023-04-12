@@ -109,6 +109,7 @@ func spawn() -> void:
 		#//note: better to use pop back and update active register?
 		new_entity = inactive_entities[0]
 		_on_entity_enabled(new_entity)
+	print(new_entity)
 	
 	# check if valid,
 	# must be correct class (or extended from) and inside tree
@@ -121,6 +122,10 @@ func spawn() -> void:
 			entity_spawn_successful = true
 			# end of spawn process
 			emit_signal("entity_spawned", new_entity)
+		else:
+			print("new entity not inside tree")
+	else:
+		print("new entity not entityArea")
 	# invalid endpoint, log
 	if not entity_spawn_successful:
 		GlobalDebug.log_error(CLASS_NAME, "spawn", "invalid entity")
