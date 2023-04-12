@@ -16,6 +16,29 @@ const VERBOSE_LOGGING := false
 
 ##############################################################################
 
+# the location to place the object within the scene tree, if it currently
+# does not have a parent or the 'reset_parent_on_reuse' property is set
+# when the object becomes active
+# GLOBAL_POOL - the object is set as a child of the autoload, GlobalPool,
+#	if the autoload is found (defaults to ROOT if the autoload is not found)
+# SELF - the object is set as a child of the objectPool node itself, if the
+#	pool itself is inside the scene tree (default to ROOT if not)
+# ROOT - the object is added to the scene tree root
+#	(this is the default and fallback setting)
+enum PARENT {GLOBAL_POOL, SELF, ROOT}
+
+# arguments for the _set_object_properties method
+# each corresponds to one of the 'set_on_' properties ('set_on_init',
+# 'set_on_active', or 'set_on_inactive')
+# each property allows forcing properties on objects
+# INITIAL - corresponds to 'set_on_init', for properties set when objects
+#	are added to the pool initially
+# ACTIVE - corresponds to 'set_on_active', for properties set when objects
+#	are moved to the pool's active register
+# INACTIVE - corresponds to 'set_on_inactive', for properties set when
+#	objects are moved to the pool's inactive register
+enum PROPERTY_REGISTER {INITIAL, ACTIVE, INACTIVE}
+
 # the packed scene which is the object to be instanced
 var target_scene: PackedScene
 
@@ -50,6 +73,26 @@ var set_on_init = {}
 var set_on_active = {}
 # overrides for when registered as 'inactive' by the objectPool
 var set_on_inactive = {}
+
+# spawn parent is an option for where to place newly created and reused
+# objects within the scene tree
+var spawn_parent: int = PARENT.GLOBAL_POOL setget _set_spawn_parent
+
+# if node parent doesn't match the parent type specified in spawn_parent,
+# change the node parent whenever the node is activated by the object pool
+# if set false, ignore this behaviour
+var reset_parent_on_reuse := false
+
+##############################################################################
+
+# setters and getters
+
+
+# spawn_parent only accepts values from the PARENT enum
+func _set_spawn_parent(arg_value: int):
+	if arg_value in PARENT.values():
+		spawn_parent = arg_value
+
 
 ##############################################################################
 
@@ -96,9 +139,79 @@ func _init(
 
 # public methods
 
+
+# method to return a valid object
+func get_object():
+	pass
+
+
 ##############################################################################
 
 # private methods
+
+
+# method to turn an inactive object within the pool into an active object
+# this is a contemporary to the '_create_object' method
+func _activate_object(arg_object_ref: Object):
+	arg_object_ref = arg_object_ref
+	pass
+
+
+# method to instantiate a new object and add it to the object pool
+# this is a contemporary to the '_activate_object' method
+func _create_object(arg_object_ref: Object):
+	arg_object_ref = arg_object_ref
+	pass
+
+
+# method to turn an active object within the pool into an inactive object
+func _deactivate_object(arg_object_ref: Object):
+	arg_object_ref = arg_object_ref
+	pass
+
+
+# checks the object_register for the next inactive object
+# either returns an object if an inactive object is found, or null if
+# no object is currently inactive
+# called by the 'get_object' method to check whether a new object needs to be
+# created or an object could be reused
+func _get_next_inactive_object(arg_object_ref: Object):
+	arg_object_ref = arg_object_ref
+	pass
+
+
+# method to completely remove an object from the object pool
+# if an object is removed from the object pool it does not cease to exist,
+# it is just no longer tracked by the pool for active/inactive registering
+# devnote: once outside the object pool any properties set by active or
+#	inactive state will remain as such unless manually changed
+func _remove_object(arg_object_ref: Object):
+	arg_object_ref = arg_object_ref
+	pass
+
+
+# sets the parent of a node according to the 'spawn_parent' property
+# and PARENT enum
+func _set_object_parent(arg_object_ref: Object):
+	arg_object_ref = arg_object_ref
+	pass
+
+
+# sets object properties according to a 'set_on_' properties ('set_on_init',
+# 'set_on_active', or 'set_on_inactive')
+# see the PROPERTY_REGISTER enum for more detail
+# if a property isn't valid for the object (the property can't be found or
+# the value is the wrong type) the object's property will not be changed
+# [parameters]
+# #1, 'arg_object_ref', object to alter the properties of
+# #2, 'arg_register_id', value from the PROPERTY_REGISTER enum to select
+#	the correct 'set_on' dictionary
+func _set_object_properties(
+		arg_object_ref: Object,
+		arg_register_id: int):
+	arg_object_ref = arg_object_ref
+	pass
+
 
 ##############################################################################
 
