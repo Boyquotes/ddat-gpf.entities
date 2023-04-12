@@ -16,6 +16,18 @@ const VERBOSE_LOGGING := false
 
 ##############################################################################
 
+# signal for manually adding an object to the pool
+signal object_added(object)
+# signal for an object being instantiated by the poool
+signal object_created(object)
+# signal for manually removing an object from the pool
+signal object_removed(object)
+# signals for if the objectPool changes the active register state of an object
+# if object is added to register as active, or changed to be active
+signal object_active(object)
+# if object is added to register as inactive, or changed to be unactive
+signal object_inactive(object)
+
 # the location to place the object within the scene tree, if it currently
 # does not have a parent or the 'reset_parent_on_reuse' property is set
 # when the object becomes active
@@ -83,6 +95,16 @@ var spawn_parent: int = PARENT.GLOBAL_POOL setget _set_spawn_parent
 # if set false, ignore this behaviour
 var reset_parent_on_reuse := false
 
+# if object pool falls below this number of inactive objects, the pool
+# automatically readies a new object
+# this is a useful property for pools whose callers don't want to wait for
+# deferred instantiation, ensuring that there is always an inactive object
+# waiting to be repurposed
+# devnote: multiple calls within the span of a frame may result in the pool
+#	not having a readied object nonetheless, and this behaviour subverts the
+#	original purpose of the objectPool by constantly readying new objects
+var minimum_pool_size := 0
+
 ##############################################################################
 
 # setters and getters
@@ -149,9 +171,39 @@ func _init(
 # public methods
 
 
+# method to manually add a pre-existing object to the object pool
+# the object in question must be a match for the packedScene value of the
+# property 'target_scene', otherwise it will not be added
+# method returns OK if object was succesfully added, and an ERR code otherwise
+# objects manually added to the pool will be subject to the same property
+# forcing (see PROPERTY_REGISTER enum) as newly created objects
+func add_to_pool(arg_object_ref: Object):
+	arg_object_ref = arg_object_ref
+	pass
+
+
 # method to return a valid object
 func get_object():
 	pass
+
+
+# method to return the entire contents of the pool
+# returns the active register and any pending changes
+func get_pool():
+	pass
+
+
+## method to completely remove an object from the object pool
+## if an object is removed from the object pool it does not cease to exist,
+## it is just no longer tracked by the pool for active/inactive registering
+## devnote: once outside the object pool any properties set by active or
+##	inactive state will remain as such unless manually changed
+#func remove_from_pool(arg_object_ref: Object):
+#	arg_object_ref = arg_object_ref
+#	pass
+#	# state for waiting_to_join_tree, is_active, is_turning_active,
+#	# is_inactive, is_turning_inacitve, waiting_to_leave_tree
+#	# etc
 
 
 ##############################################################################
@@ -189,16 +241,6 @@ func _deactivate_object(arg_object_ref: Object):
 # called by the 'get_object' method to check whether a new object needs to be
 # created or an object could be reused
 func _get_next_inactive_object(arg_object_ref: Object):
-	arg_object_ref = arg_object_ref
-	pass
-
-
-# method to completely remove an object from the object pool
-# if an object is removed from the object pool it does not cease to exist,
-# it is just no longer tracked by the pool for active/inactive registering
-# devnote: once outside the object pool any properties set by active or
-#	inactive state will remain as such unless manually changed
-func _remove_object(arg_object_ref: Object):
 	arg_object_ref = arg_object_ref
 	pass
 
