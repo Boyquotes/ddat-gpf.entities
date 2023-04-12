@@ -101,28 +101,37 @@ func _set_spawn_parent(arg_value: int):
 
 # initialising a new objectPool
 # [parameters]
-# #1, arg_object_scene is the target scene you wish the objectPool to manage,
+# #1, arg_object_scene, is the target scene you wish the objectPool to manage,
 #	and instantiate on any 'spawn' method calls
 #	(see 'target_scene' for more detail)
-# #2, arg_forced_properties is a dictionary register of properties you wish to
+# #2, arg_forced_properties, is a dictionary register of properties you wish to
 #	automatically set on any 
 #	(see 'set_on_init' for more detail)
-# #3, arg_forced_on_active is as the above except occurs when an object is
+# #3, arg_forced_on_active, is as the above except occurs when an object is
 #	registered as 'active' by the objectPool
 #	(see 'set_on_active' for more detail)
-# #4, arg_forced_on_inactive is as the above except occurs when an object is
+# #4, arg_forced_on_inactive, is as the above except occurs when an object is
 #	registered as 'inactive' by the objectPool
 #	(see 'set_on_inactive' for more detail)
+# #5, arg_initial_pool_size, is the number of objects (instanced from the
+#	arg_object_scene given as argument 1) to begin the pool with
+#	(be cautious creating large pools as it may have a performance impact)
 func _init(
 		arg_object_scene: PackedScene,
 		arg_forced_properties: Dictionary = {},
 		arg_forced_on_active: Dictionary = {},
-		arg_forced_on_inactive: Dictionary = {}
+		arg_forced_on_inactive: Dictionary = {},
+		arg_initial_pool_size: int = 0
 		):
 	self.target_scene = arg_object_scene
 	self.set_on_init = arg_forced_properties
 	self.set_on_active = arg_forced_on_active
 	self.set_on_inactive = arg_forced_on_inactive
+	# not currently using created objects, just discarding returned references
+	# to them immediately (new objects will be set inactive)
+	var _discard_obj
+	for i in range(arg_initial_pool_size):
+		_discard_obj = _create_object(false)
 
 
 # Called when the node enters the scene tree for the first time.
@@ -159,9 +168,13 @@ func _activate_object(arg_object_ref: Object):
 
 # method to instantiate a new object and add it to the object pool
 # this is a contemporary to the '_activate_object' method
-func _create_object(arg_object_ref: Object):
-	arg_object_ref = arg_object_ref
-	pass
+# returns null if unable to create object
+# is_active argument determines whether to add the new object to the active
+# register (if true) or inactive register (if false)
+# if attempting to get an object via the 'get_object' method, this should be
+# left as the default value of true (for a readied object)
+func _create_object(is_active: bool = true):
+	return null
 
 
 # method to turn an active object within the pool into an inactive object
