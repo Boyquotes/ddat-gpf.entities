@@ -176,8 +176,11 @@ func _new_spawn():
 	# spawn_method duplicate root entity
 	if (spawn_method == NEW_SPAWN_METHOD.EITHER)\
 	or (spawn_method == NEW_SPAWN_METHOD.DUPLICATE):
-		if spawner_entity is EntityArea:
+		if new_entity is EntityArea:
 			new_entity = _new_spawn_by_duplicate()
+			# if new entity, assign it a parent and add it to the tree
+			_assign_entity_parent(new_entity)
+			yield(new_entity, "tree_entered")
 	# spawn_method instance entity from premade scene
 	if (spawn_method == NEW_SPAWN_METHOD.EITHER)\
 	or (spawn_method == NEW_SPAWN_METHOD.INSTANCE):
@@ -189,10 +192,8 @@ func _new_spawn():
 		_on_entity_enabled(new_entity)
 		# when the entity changes active state it should update the spawner's
 		# 'active_entities' and 'inactive_entities' registers
-		new_entity.connect("_on_entity_disabled", self,
-				"_entity_disabled", [new_entity])
-		# if new entity, assign it a parent and add it to the tree
-		_assign_entity_parent(new_entity)
+		new_entity.connect("is_disabled", self,
+				"_on_entity_disabled", [new_entity])
 	# make sure on return to check if new_entity is valid, this can return null
 	return new_entity
 
