@@ -177,7 +177,11 @@ func _init(
 # method returns OK if object was succesfully added, and an ERR code otherwise
 # objects manually added to the pool will be subject to the same property
 # forcing (see PROPERTY_REGISTER enum) as newly created objects
-func add_to_pool(arg_object_ref: Object):
+# [parameters]
+# #1, 'arg_object_ref', object to manually add to the pool
+# #2, 'is_active', whether to add the object as 'active' within the pool
+#	(if value is true) or 'inactive' within the pool (if value is false)
+func add_to_pool(arg_object_ref: Object, is_active: bool = true):
 	arg_object_ref = arg_object_ref
 	pass
 
@@ -187,23 +191,25 @@ func get_object():
 	pass
 
 
-# method to return the entire contents of the pool
-# returns the active register and any pending changes
-func get_pool():
-	pass
-
-
-## method to completely remove an object from the object pool
-## if an object is removed from the object pool it does not cease to exist,
-## it is just no longer tracked by the pool for active/inactive registering
-## devnote: once outside the object pool any properties set by active or
-##	inactive state will remain as such unless manually changed
-#func remove_from_pool(arg_object_ref: Object):
-#	arg_object_ref = arg_object_ref
+## method to return the entire contents of the pool
+## returns the active register and any pending changes
+#func get_pool():
 #	pass
 #	# state for waiting_to_join_tree, is_active, is_turning_active,
 #	# is_inactive, is_turning_inacitve, waiting_to_leave_tree
 #	# etc
+
+
+# method to completely remove an object from the object pool
+# if an object is removed from the object pool it does not cease to exist,
+# it is just no longer tracked by the pool for active/inactive registering
+# devnote: once outside the object pool any properties set by active or
+#	inactive state will remain as such unless manually changed
+# [parameters]
+# #1, 'arg_object_ref', object to manually remove from the pool
+func remove_from_pool(arg_object_ref: Object):
+	arg_object_ref = arg_object_ref
+	pass
 
 
 ##############################################################################
@@ -213,6 +219,8 @@ func get_pool():
 
 # method to turn an inactive object within the pool into an active object
 # this is a contemporary to the '_create_object' method
+# [parameters]
+# #1, 'arg_object_ref', object to change to active
 func _activate_object(arg_object_ref: Object):
 	arg_object_ref = arg_object_ref
 	pass
@@ -225,11 +233,16 @@ func _activate_object(arg_object_ref: Object):
 # register (if true) or inactive register (if false)
 # if attempting to get an object via the 'get_object' method, this should be
 # left as the default value of true (for a readied object)
+# [parameters]
+# #1, 'is_active', whether to set the object to active within the objectPool
+#	(if value is true) or inactive within the objectPool (if value is false)
 func _create_object(is_active: bool = true):
 	return null
 
 
 # method to turn an active object within the pool into an inactive object
+# [parameters]
+# #1, 'arg_object_ref', object to change to inactive
 func _deactivate_object(arg_object_ref: Object):
 	arg_object_ref = arg_object_ref
 	pass
@@ -240,13 +253,14 @@ func _deactivate_object(arg_object_ref: Object):
 # no object is currently inactive
 # called by the 'get_object' method to check whether a new object needs to be
 # created or an object could be reused
-func _get_next_inactive_object(arg_object_ref: Object):
-	arg_object_ref = arg_object_ref
+func _get_next_inactive_object():
 	pass
 
 
 # sets the parent of a node according to the 'spawn_parent' property
 # and PARENT enum
+# [parameters]
+# #1, 'arg_object_ref', object to change the parent of
 func _set_object_parent(arg_object_ref: Object):
 	arg_object_ref = arg_object_ref
 	pass
