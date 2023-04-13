@@ -1,6 +1,6 @@
 [gd_scene load_steps=9 format=2]
 
-[ext_resource path="res://_testenv/tests_entity_ability/unit_entity_spawner/entity_spawner.gd" type="Script" id=1]
+[ext_resource path="res://_testenv/tests_entity_ability/unit_entity_spawner/test_entab_spawner.gd" type="Script" id=1]
 [ext_resource path="res://_dev/ddat_icon.png" type="Texture" id=2]
 [ext_resource path="res://_dev/icon.png" type="Texture" id=3]
 [ext_resource path="res://_testenv/tests_entity_ability/unit_ability_controller/test_entity_area_scene.tscn" type="PackedScene" id=4]
