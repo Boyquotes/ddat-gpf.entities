@@ -58,7 +58,9 @@ enum PROPERTY_REGISTER {INITIAL, ACTIVE, INACTIVE}
 #enum OBJECT_CREATION {INSTANTIATION, DUPLICATION}
 
 # the packed scene which is the object to be instanced
-var target_scene: PackedScene
+# cannot be changed after initialising the objectPool, create a new
+# objectPool if you wish to manage a different scene
+var target_scene: PackedScene setget _set_target_scene
 
 # the initial instance of the pool's target scene
 # used for comparing objects outside of the pool to verify they are instances
@@ -126,6 +128,13 @@ var minimum_pool_size := 0
 # setters and getters
 
 
+# target scene should not be changed after initialisation
+# attempts to do so will be rejected
+func _set_target_scene(_arg_value: PackedScene):
+	GlobalDebug.log_error(SCRIPT_NAME, "_set_target_scene",
+			"attempted to change target scene, unauthorised")
+
+
 # spawn_parent only accepts values from the PARENT enum
 func _set_spawn_parent(arg_value: int):
 	if arg_value in PARENT.values():
@@ -164,11 +173,16 @@ func _init(
 		arg_forced_on_inactive: Dictionary = {},
 		arg_initial_pool_size: int = 0
 		):
-	self.target_scene = arg_object_scene
+	# don't call setter for target scene or it will reject the value
+	target_scene = arg_object_scene
+	# other properties should call setters
 	self.set_on_init = arg_forced_properties
 	self.set_on_active = arg_forced_on_active
 	self.set_on_inactive = arg_forced_on_inactive
 	
+	# create an initial instance to test the target scene
+	# normally would defer this call but need this immediately
+	# (for this reason do not create large numbers of objectPools in one frame)
 	self.sample_instance = target_scene.instance()
 	if sample_instance != null:
 		self.is_setup = true
