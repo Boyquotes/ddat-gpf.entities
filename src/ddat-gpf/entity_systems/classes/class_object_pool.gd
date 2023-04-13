@@ -51,8 +51,24 @@ enum PARENT {GLOBAL_POOL, SELF, ROOT}
 #	objects are moved to the pool's inactive register
 enum PROPERTY_REGISTER {INITIAL, ACTIVE, INACTIVE}
 
+# out of scope, default to duplication for now
+# when creating a new object the value of this enum determines how to do so
+# INSTANTIATION - prefer .instance() calls
+# DUPLICATION - prefer .duplicate() calls
+#enum OBJECT_CREATION {INSTANTIATION, DUPLICATION}
+
 # the packed scene which is the object to be instanced
 var target_scene: PackedScene
+
+# the initial instance of the pool's target scene
+# used for comparing objects outside of the pool to verify they are instances
+# of the target scene, and used for duplicating new objects
+# is instanced during the init call
+var sample_instance
+
+# whether the objectPool is active
+# many methods do not function if the setup fails
+var is_setup := false
 
 # record of objects assigned to this objectPool
 # key = object
@@ -122,6 +138,7 @@ func _set_spawn_parent(arg_value: int):
 
 
 # initialising a new objectPool
+# will automatically call setters during initialisation
 # [parameters]
 # #1, arg_object_scene, is the target scene you wish the objectPool to manage,
 #	and instantiate on any 'spawn' method calls
@@ -149,11 +166,18 @@ func _init(
 	self.set_on_init = arg_forced_properties
 	self.set_on_active = arg_forced_on_active
 	self.set_on_inactive = arg_forced_on_inactive
-	# not currently using created objects, just discarding returned references
-	# to them immediately (new objects will be set inactive)
-	var _discard_obj
-	for i in range(arg_initial_pool_size):
-		_discard_obj = _create_object(false)
+	
+	self.sample_instance = target_scene.instance()
+	if sample_instance != null:
+		self.is_setup = true
+		# if set up correctly, can start using the pool
+		# not currently using created objects, just discarding returned references
+		# to them immediately (new objects will be set inactive)
+		var _discard_obj
+		for _i in range(arg_initial_pool_size):
+			_discard_obj = _create_object(false)
+	else:
+		self.is_setup = false
 
 
 # Called when the node enters the scene tree for the first time.
@@ -174,16 +198,31 @@ func _init(
 # method to manually add a pre-existing object to the object pool
 # the object in question must be a match for the packedScene value of the
 # property 'target_scene', otherwise it will not be added
-# method returns OK if object was succesfully added, and an ERR code otherwise
 # objects manually added to the pool will be subject to the same property
 # forcing (see PROPERTY_REGISTER enum) as newly created objects
+# will return either an ERR constant on failure (if object cannot be added
+# to pool, e.g. if it is already in the pool or is invalid) or OK on success
 # [parameters]
 # #1, 'arg_object_ref', object to manually add to the pool
 # #2, 'is_active', whether to add the object as 'active' within the pool
 #	(if value is true) or 'inactive' within the pool (if value is false)
-func add_to_pool(arg_object_ref: Object, is_active: bool = true):
-	arg_object_ref = arg_object_ref
-	pass
+func add_to_pool(arg_object_ref: Object, is_active: bool = true) -> int:
+	# ERR check - is it the same as the target scene
+	if not (arg_object_ref.get_script() == sample_instance.get_script()):
+		GlobalDebug.log_error(SCRIPT_NAME, "add_to_pool", "invalid object")
+		return ERR_INVALID_PARAMETER
+	# ERR check - is it already in the objectPool register
+	if arg_object_ref in object_register.keys():
+		GlobalDebug.log_error(SCRIPT_NAME, "add_to_pool", "object in pool")
+		return ERR_ALREADY_EXISTS
+	
+	# otherwise, valid
+	object_register[arg_object_ref] = is_active
+	if is_active:
+		_activate_object(arg_object_ref)
+	else:
+		_deactivate_object(arg_object_ref)
+	return OK
 
 
 # method to return a valid object
@@ -204,12 +243,27 @@ func get_object():
 # if an object is removed from the object pool it does not cease to exist,
 # it is just no longer tracked by the pool for active/inactive registering
 # devnote: once outside the object pool any properties set by active or
-#	inactive state will remain as such unless manually changed
+#	inactive state will remain as such unless manually changed; this may
+#	leave properties set to undesirable values
+# will return an OK or ERR constant based on whether the object was
+# successfully removed or not; if the object is not found an ERR constant
+# will still be returned, so check if the object is in the pool before calling
+# this method if you are checking ERR constants for failure states
 # [parameters]
 # #1, 'arg_object_ref', object to manually remove from the pool
 func remove_from_pool(arg_object_ref: Object):
-	arg_object_ref = arg_object_ref
-	pass
+	# ERR check - is object in pool
+	if not arg_object_ref in object_register.keys():
+		GlobalDebug.log_error(SCRIPT_NAME, "remove_from_pool",
+				"object not in pool")
+		return ERR_DOES_NOT_EXIST
+	
+	# otherwise, valid
+	if object_register.erase(arg_object_ref):
+		return OK
+	# shouldn't get here, already checked exists
+	else:
+		return ERR_DOES_NOT_EXIST
 
 
 ##############################################################################
