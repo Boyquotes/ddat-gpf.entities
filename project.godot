@@ -59,10 +59,15 @@ _global_script_classes=[ {
 "language": "GDScript",
 "path": "res://src/ddat-gpf/classes/class_global.gd"
 }, {
+"base": "ObjectPool",
+"class": "NodePool",
+"language": "GDScript",
+"path": "res://src/ddat-gpf/entity_systems/classes/class_pool_node.gd"
+}, {
 "base": "Node",
 "class": "ObjectPool",
 "language": "GDScript",
-"path": "res://src/ddat-gpf/entity_systems/classes/class_object_pool.gd"
+"path": "res://src/ddat-gpf/entity_systems/classes/class_pool_object.gd"
 }, {
 "base": "Actor",
 "class": "PlayerActor",
@@ -90,6 +95,7 @@ _global_script_class_icons={
 "EntitySpawner": "",
 "GameDataContainer": "",
 "GameGlobal": "",
+"NodePool": "",
 "ObjectPool": "",
 "PlayerActor": "",
 "PlayerMovementController": "",

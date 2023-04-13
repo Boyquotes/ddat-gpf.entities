@@ -5,14 +5,17 @@ class_name ObjectPool
 ##############################################################################
 #
 # ObjectPools track objects from a specific class, cataloguing which are
-# active and which are inactive. Instead of instancing new objects 
+# active and which are inactive. Instead of instancing new objects, objects
+# are reused when a new object is needed.
+# If the object you wish to manage is able to join the scene tree (e.g.
+# it is extended from the node class), consider using a nodePool instead
 
 ##############################################################################
 #
 # dev use only, for passing to error logging
-const SCRIPT_NAME := "ObjectPool"
+const CLASS_NAME := "ObjectPool"
 # dev use only, make sure to unset when not testing
-const VERBOSE_LOGGING := false
+const CLASS_VERBOSE_LOGGING := false
 
 ##############################################################################
 
@@ -27,17 +30,6 @@ signal object_removed(object)
 signal object_active(object)
 # if object is added to register as inactive, or changed to be unactive
 signal object_inactive(object)
-
-# the location to place the object within the scene tree, if it currently
-# does not have a parent or the 'reset_parent_on_reuse' property is set
-# when the object becomes active
-# GLOBAL_POOL - the object is set as a child of the autoload, GlobalPool,
-#	if the autoload is found (defaults to ROOT if the autoload is not found)
-# SELF - the object is set as a child of the objectPool node itself, if the
-#	pool itself is inside the scene tree (default to ROOT if not)
-# ROOT - the object is added to the scene tree root
-#	(this is the default and fallback setting)
-enum PARENT {GLOBAL_POOL, SELF, ROOT}
 
 # arguments for the _set_object_properties method
 # each corresponds to one of the 'set_on_' properties ('set_on_init',
@@ -104,15 +96,6 @@ var set_on_active = {}
 # overrides for when registered as 'inactive' by the objectPool
 var set_on_inactive = {}
 
-# spawn parent is an option for where to place newly created and reused
-# objects within the scene tree
-var spawn_parent: int = PARENT.GLOBAL_POOL setget _set_spawn_parent
-
-# if node parent doesn't match the parent type specified in spawn_parent,
-# change the node parent whenever the node is activated by the object pool
-# if set false, ignore this behaviour
-var reset_parent_on_reuse := false
-
 # if object pool falls below this number of inactive objects, the pool
 # automatically readies a new object
 # this is a useful property for pools whose callers don't want to wait for
@@ -131,14 +114,8 @@ var minimum_pool_size := 0
 # target scene should not be changed after initialisation
 # attempts to do so will be rejected
 func _set_target_scene(_arg_value: PackedScene):
-	GlobalDebug.log_error(SCRIPT_NAME, "_set_target_scene",
+	GlobalDebug.log_error(CLASS_NAME, "_set_target_scene",
 			"attempted to change target scene, unauthorised")
-
-
-# spawn_parent only accepts values from the PARENT enum
-func _set_spawn_parent(arg_value: int):
-	if arg_value in PARENT.values():
-		spawn_parent = arg_value
 
 
 ##############################################################################
@@ -223,7 +200,7 @@ func activate_object(arg_object_ref: Object) -> int:
 	if _get_if_in_pool(arg_object_ref):
 		return _change_object_pool_state(arg_object_ref, true)
 	else:
-		GlobalDebug.log_error(SCRIPT_NAME, "activate_object",
+		GlobalDebug.log_error(CLASS_NAME, "activate_object",
 				"object not in pool")
 		return ERR_DOES_NOT_EXIST
 
@@ -242,11 +219,11 @@ func activate_object(arg_object_ref: Object) -> int:
 func add_to_pool(arg_object_ref: Object, is_active: bool = true) -> int:
 	# ERR check - is it the same as the target scene
 	if not (arg_object_ref.get_script() == sample_instance.get_script()):
-		GlobalDebug.log_error(SCRIPT_NAME, "add_to_pool", "invalid object")
+		GlobalDebug.log_error(CLASS_NAME, "add_to_pool", "invalid object")
 		return ERR_INVALID_PARAMETER
 	# ERR check - is it already in the objectPool register
 	if _get_if_in_pool(arg_object_ref) == true:
-		GlobalDebug.log_error(SCRIPT_NAME, "add_to_pool", "object in pool")
+		GlobalDebug.log_error(CLASS_NAME, "add_to_pool", "object in pool")
 		return ERR_ALREADY_EXISTS
 	
 	# otherwise, valid
@@ -267,7 +244,7 @@ func deactivate_object(arg_object_ref: Object) -> int:
 	if _get_if_in_pool(arg_object_ref):
 		return _change_object_pool_state(arg_object_ref, false)
 	else:
-		GlobalDebug.log_error(SCRIPT_NAME, "deactivate_object",
+		GlobalDebug.log_error(CLASS_NAME, "deactivate_object",
 				"object not in pool")
 		return ERR_DOES_NOT_EXIST
 
@@ -301,7 +278,7 @@ func get_object():
 func remove_from_pool(arg_object_ref: Object):
 	# ERR check - is object in pool
 	if _get_if_in_pool(arg_object_ref) == false:
-		GlobalDebug.log_error(SCRIPT_NAME, "remove_from_pool",
+		GlobalDebug.log_error(CLASS_NAME, "remove_from_pool",
 				"object not in pool")
 		return ERR_DOES_NOT_EXIST
 	
@@ -333,7 +310,7 @@ func _change_object_pool_state(
 		return OK
 	# ERR not found
 	else:
-		GlobalDebug.log_error(SCRIPT_NAME, "_activate_object",
+		GlobalDebug.log_error(CLASS_NAME, "_activate_object",
 				"object not found in pool")
 		return ERR_DOES_NOT_EXIST
 
@@ -369,15 +346,6 @@ func _get_if_in_pool(arg_object_ref: Object) -> bool:
 # called by the 'get_object' method to check whether a new object needs to be
 # created or an object could be reused
 func _get_next_inactive_object():
-	pass
-
-
-# sets the parent of a node according to the 'spawn_parent' property
-# and PARENT enum
-# [parameters]
-# #1, 'arg_object_ref', object to change the parent of
-func _set_object_parent(arg_object_ref: Object):
-	arg_object_ref = arg_object_ref
 	pass
 
 
