@@ -157,6 +157,8 @@ func _set_spawn_parent(arg_value: int):
 #	(be cautious creating large pools as it may have a performance impact)
 func _init(
 		arg_object_scene: PackedScene,
+#		set_active_signal: String = "",
+#		set_inactive_signal: String = "",
 		arg_forced_properties: Dictionary = {},
 		arg_forced_on_active: Dictionary = {},
 		arg_forced_on_inactive: Dictionary = {},
@@ -212,16 +214,13 @@ func add_to_pool(arg_object_ref: Object, is_active: bool = true) -> int:
 		GlobalDebug.log_error(SCRIPT_NAME, "add_to_pool", "invalid object")
 		return ERR_INVALID_PARAMETER
 	# ERR check - is it already in the objectPool register
-	if arg_object_ref in object_register.keys():
+	if _get_if_in_pool(arg_object_ref) == true:
 		GlobalDebug.log_error(SCRIPT_NAME, "add_to_pool", "object in pool")
 		return ERR_ALREADY_EXISTS
 	
 	# otherwise, valid
 	object_register[arg_object_ref] = is_active
-	if is_active:
-		_activate_object(arg_object_ref)
-	else:
-		_deactivate_object(arg_object_ref)
+	_change_object_pool_state(arg_object_ref, is_active)
 	return OK
 
 
@@ -253,7 +252,7 @@ func get_object():
 # #1, 'arg_object_ref', object to manually remove from the pool
 func remove_from_pool(arg_object_ref: Object):
 	# ERR check - is object in pool
-	if not arg_object_ref in object_register.keys():
+	if _get_if_in_pool(arg_object_ref) == false:
 		GlobalDebug.log_error(SCRIPT_NAME, "remove_from_pool",
 				"object not in pool")
 		return ERR_DOES_NOT_EXIST
@@ -271,13 +270,22 @@ func remove_from_pool(arg_object_ref: Object):
 # private methods
 
 
-# method to turn an inactive object within the pool into an active object
-# this is a contemporary to the '_create_object' method
+# method to set an object within the pool 'active' (in use) or
+# 'inactive' (not in use)
 # [parameters]
 # #1, 'arg_object_ref', object to change to active
-func _activate_object(arg_object_ref: Object):
-	arg_object_ref = arg_object_ref
-	pass
+# #1, 'is_active', whether to set object active (true) or inactive (false)
+func _change_object_pool_state(
+			arg_object_ref: Object,
+			is_active: bool = true):
+	if _get_if_in_pool(arg_object_ref) == true:
+		# set active
+		object_register[arg_object_ref] = true
+	# ERR not found
+	else:
+		GlobalDebug.log_error()
+		GlobalDebug.log_error(SCRIPT_NAME, "_activate_object",
+				"object not found in pool")
 
 
 # method to instantiate a new object and add it to the object pool
@@ -294,12 +302,15 @@ func _create_object(is_active: bool = true):
 	return null
 
 
-# method to turn an active object within the pool into an inactive object
+# reusable method to check if object exists in pool, with error logging
+# returns true if object is found in pool, false otherwise
 # [parameters]
-# #1, 'arg_object_ref', object to change to inactive
-func _deactivate_object(arg_object_ref: Object):
-	arg_object_ref = arg_object_ref
-	pass
+# #1, 'arg_object_ref', object to check against pool (object register)
+func _get_if_in_pool(arg_object_ref: Object) -> bool:
+	if arg_object_ref in object_register.keys():
+		return true
+	else:
+		return false
 
 
 # checks the object_register for the next inactive object
