@@ -101,10 +101,14 @@ var set_on_inactive = {}
 # this is a useful property for pools whose callers don't want to wait for
 # deferred instantiation, ensuring that there is always an inactive object
 # waiting to be repurposed
-# devnote: multiple calls within the span of a frame may result in the pool
+# devnote1: by default this property is set to a value of 1 so that an object
+#	is available in the pool on any call, assuming that calls happen
+#	intermittently. Increase this value for pools that are expected to be
+#	called more frequently.
+# devnote2: multiple calls within the span of a frame may result in the pool
 #	not having a readied object nonetheless, and this behaviour subverts the
 #	original purpose of the objectPool by constantly readying new objects
-var minimum_pool_size := 0
+var minimum_inactive_pool_size := 1
 
 ##############################################################################
 
@@ -225,7 +229,7 @@ func add_to_pool(arg_object_ref: Object, is_active: bool = true) -> int:
 	if _get_if_in_pool(arg_object_ref) == true:
 		GlobalDebug.log_error(CLASS_NAME, "add_to_pool", "object in pool")
 		return ERR_ALREADY_EXISTS
-	
+	#
 	# otherwise, valid
 	object_register[arg_object_ref] = is_active
 	_change_object_pool_state(arg_object_ref, is_active)
@@ -250,8 +254,23 @@ func deactivate_object(arg_object_ref: Object) -> int:
 
 
 # method to return a valid object
+# if there is a valid (active) object in the object_register, that object
+# will be returned; otherwise will return null and attempt to instantiate
+# a new object for the pool
+# devnote: if you wish for callers to always get an object from the object
+# pool, connect the 'object_created' signal to the caller or wait for the
+# new object on a null return
+# e.g.
+#	func call_pool():
+#		var new_object = SampleObjectPool.get_object()
+#		if new_object == null:
+#			new_object = yield(SampleObjectPool, "object_created")
 func get_object():
-	pass
+	var new_object = _get_next_inactive_object()
+	if new_object == null:
+		_create_object()
+	# will be null if an inactive object wasn't found
+	return new_object
 
 
 ## method to return the entire contents of the pool
@@ -281,7 +300,7 @@ func remove_from_pool(arg_object_ref: Object):
 		GlobalDebug.log_error(CLASS_NAME, "remove_from_pool",
 				"object not in pool")
 		return ERR_DOES_NOT_EXIST
-	
+	#
 	# otherwise, valid
 	if object_register.erase(arg_object_ref):
 		return OK
@@ -317,14 +336,13 @@ func _change_object_pool_state(
 
 # method to instantiate a new object and add it to the object pool
 # this is a contemporary to the '_activate_object' method
-# returns null if unable to create object
-# is_active argument determines whether to add the new object to the active
-# register (if true) or inactive register (if false)
-# if attempting to get an object via the 'get_object' method, this should be
-# left as the default value of true (for a readied object)
+# does not return, calls to instantiate or duplicate are made as deferred
+# calls so any immediate return would be made without knowledge of the outcome
 # [parameters]
 # #1, 'is_active', whether to set the object to active within the objectPool
 #	(if value is true) or inactive within the objectPool (if value is false)
+#	devnote: if attempting to get an object via the 'get_object' method, this
+#		should be left as the default value of true (for a readied object)
 func _create_object(is_active: bool = true):
 	return null
 
