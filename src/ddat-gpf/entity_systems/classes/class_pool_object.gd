@@ -269,6 +269,11 @@ func get_object():
 	var new_object = _get_next_inactive_object()
 	if new_object == null:
 		_create_object()
+	# update object state when returning
+	if new_object != null:
+		_change_object_pool_state(new_object, true)
+	# check pool size afterwards
+	_check_pool_minimum_size()
 	# will be null if an inactive object wasn't found
 	return new_object
 
@@ -348,6 +353,14 @@ func _change_object_pool_state(
 		return ERR_DOES_NOT_EXIST
 
 
+func _check_pool_minimum_size():
+	var total_inactive_objects = get_pool()["inactive"]
+	var current_inactive_objects = total_inactive_objects
+	while current_inactive_objects <= minimum_inactive_pool_size:
+		current_inactive_objects += 1
+		_create_object(false)
+
+
 # method to instantiate a new object and add it to the object pool
 # this is a contemporary to the '_activate_object' method
 # does not return, calls to instantiate or duplicate are made as deferred
@@ -377,13 +390,13 @@ func _get_if_in_pool(arg_object_ref: Object) -> bool:
 # checks the object_register for the next inactive object
 # either returns an object if an inactive object is found, or null if
 # no object is currently inactive
+# does NOT change the object state when getting the object
 # called by the 'get_object' method to check whether a new object needs to be
 # created or an object could be reused
 func _get_next_inactive_object():
 	# find the first inactive object
 	for pool_object in object_register:
 		if object_register[pool_object] == false:
-			_change_object_pool_state(pool_object, true)
 			return pool_object
 	# if reaching the end without finding one
 	return null
