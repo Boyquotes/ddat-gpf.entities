@@ -345,7 +345,14 @@ func _change_object_pool_state(
 	if _get_if_in_pool(arg_object_ref) == true:
 		# set active
 		object_register[arg_object_ref] = is_active
+		# set properties based on new state
+		if is_active:
+			_set_object_properties(arg_object_ref, PROPERTY_REGISTER.ACTIVE)
+		else:
+			_set_object_properties(arg_object_ref, PROPERTY_REGISTER.INACTIVE)
+		#
 		return OK
+	#
 	# ERR not found
 	else:
 		GlobalDebug.log_error(CLASS_NAME, "_activate_object",
@@ -374,6 +381,7 @@ func _create_object(is_active: bool = true) -> void:
 	var new_object = target_scene.instance()
 	if new_object != null:
 		_change_object_pool_state(new_object, is_active)
+		_set_object_properties(new_object, PROPERTY_REGISTER.INITIAL)
 
 
 # reusable method to check if object exists in pool, with error logging
@@ -414,8 +422,26 @@ func _get_next_inactive_object():
 func _set_object_properties(
 		arg_object_ref: Object,
 		arg_register_id: int):
-	arg_object_ref = arg_object_ref
-	pass
+	var property_register: Dictionary
+	# ERR check, arg_register_id must match PROPERTY_REGISTER
+	if not arg_register_id in PROPERTY_REGISTER.values():
+		return
+	# choose a property register property
+	match arg_register_id:
+		PROPERTY_REGISTER.INITIAL:
+			property_register = set_on_init
+		PROPERTY_REGISTER.ACTIVE:
+			property_register = set_on_active
+		PROPERTY_REGISTER.INACTIVE:
+			property_register = set_on_inactive
+	# loop through register and apply the settings
+	for property_name in property_register.keys():
+		if (typeof(property_name) == TYPE_STRING):
+			# Assigns a value to the given property. If the property doesn't
+			# exist or the given value's type doesn't match, nothing happens.
+			arg_object_ref.set(\
+					property_name,
+					property_register[property_name])
 
 
 ##############################################################################
