@@ -273,13 +273,27 @@ func get_object():
 	return new_object
 
 
-## method to return the entire contents of the pool
-## returns the active register and any pending changes
-#func get_pool():
-#	pass
-#	# state for waiting_to_join_tree, is_active, is_turning_active,
-#	# is_inactive, is_turning_inacitve, waiting_to_leave_tree
-#	# etc
+# method to return the entire contents of the pool
+# returns a dict detailing the objects in the pool, how many are inactive,
+# and how many are active
+# returned dict will have three key/value pairs
+#	key "pool" with value of an array containing every object in the pool
+#	key "active" with total number of active objects in the pool
+#	key "inactive" with total number of inactive objects in the pool
+func get_pool() -> Dictionary:
+	var pool_details := {}
+	var total_active_objects := 0
+	var total_inactive_objects := 0
+	pool_details["pool"] = []
+	for pool_object in object_register:
+		if object_register[pool_object] == true:
+			total_active_objects += 1
+		elif object_register[pool_object] == false:
+			total_inactive_objects += 1
+		pool_details["pool"].append(pool_object)
+	pool_details["active"] = total_active_objects
+	pool_details["inactive"] = total_inactive_objects
+	return pool_details
 
 
 # method to completely remove an object from the object pool
