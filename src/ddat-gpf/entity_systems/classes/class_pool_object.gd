@@ -380,7 +380,13 @@ func _get_if_in_pool(arg_object_ref: Object) -> bool:
 # called by the 'get_object' method to check whether a new object needs to be
 # created or an object could be reused
 func _get_next_inactive_object():
-	pass
+	# find the first inactive object
+	for pool_object in object_register:
+		if object_register[pool_object] == false:
+			_change_object_pool_state(pool_object, true)
+			return pool_object
+	# if reaching the end without finding one
+	return null
 
 
 # sets object properties according to a 'set_on_' properties ('set_on_init',
