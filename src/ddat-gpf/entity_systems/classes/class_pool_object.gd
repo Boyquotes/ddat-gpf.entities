@@ -357,8 +357,10 @@ func _change_object_pool_state(
 #	(if value is true) or inactive within the objectPool (if value is false)
 #	devnote: if attempting to get an object via the 'get_object' method, this
 #		should be left as the default value of true (for a readied object)
-func _create_object(is_active: bool = true):
-	return null
+func _create_object(is_active: bool = true) -> void:
+	var new_object = target_scene.instance()
+	if new_object != null:
+		_change_object_pool_state(new_object, is_active)
 
 
 # reusable method to check if object exists in pool, with error logging
