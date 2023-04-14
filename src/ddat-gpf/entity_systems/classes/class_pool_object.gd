@@ -108,6 +108,7 @@ var set_on_inactive = {}
 # devnote2: multiple calls within the span of a frame may result in the pool
 #	not having a readied object nonetheless, and this behaviour subverts the
 #	original purpose of the objectPool by constantly readying new objects
+# devnote3: minimum size will override initial size (see init())
 var minimum_inactive_pool_size := 1
 
 ##############################################################################
@@ -145,6 +146,8 @@ func _set_target_scene(_arg_value: PackedScene):
 # #5, arg_initial_pool_size, is the number of objects (instanced from the
 #	arg_object_scene given as argument 1) to begin the pool with
 #	(be cautious creating large pools as it may have a performance impact)
+#	devnote: if the 'minimum_inactive_pool_size' property is set greater than
+#		the arg_initial_pool_size argument, it will take priority
 func _init(
 		arg_object_scene: PackedScene,
 #		set_active_signal: String = "",
@@ -168,11 +171,13 @@ func _init(
 	if sample_instance != null:
 		self.is_setup = true
 		# if set up correctly, can start using the pool
-		# not currently using created objects, just discarding returned references
-		# to them immediately (new objects will be set inactive)
+		# not currently using created objects, just discarding returned
+		# references to them immediately (new objects will be set inactive)
 		var _discard_obj
 		for _i in range(arg_initial_pool_size):
 			_discard_obj = _create_object(false)
+		# if initial size is less than minimum size, continue setting up
+		_check_pool_minimum_size()
 	else:
 		self.is_setup = false
 
